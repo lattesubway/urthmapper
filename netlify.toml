@@ -1,0 +1,9 @@
+[build]
+publish = "."
+command = ""
+
+[dev]
+port = 8888
+
+[context.production.environment]
+  NODE_VERSION = "24"

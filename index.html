@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#080d0b">
+<title>Urthmapper — Land Lead Console</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{heading:['Space Grotesk','sans-serif'],body:['Inter','sans-serif'],mono:['Geist Mono','monospace']}}}}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.157/Build/Cesium/Widgets/widgets.css">
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.157/Build/Cesium/Cesium.js"></script>
+<style>
+:root{
+  --bg:#080d0b;--bg-card:#0f1613;--bg-el:#162019;--bg-hover:#1c2b23;
+  --fg:#e2ebe5;--fg2:#a3b5aa;--muted:#5e7268;
+  --accent:#00d4aa;--accent-dim:rgba(0,212,170,.1);--accent-glow:rgba(0,212,170,.25);
+  --gold:#d4a64a;--gold-dim:rgba(212,166,74,.12);--gold2:#b66a3d;
+  --danger:#ef4444;--danger-dim:rgba(239,68,68,.12);
+  --success:#22c55e;--success-dim:rgba(34,197,94,.12);
+  --warm:#e8a832;--warm-dim:rgba(232,168,50,.12);
+  --border:#1a2d22;--border-lt:#243830;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:'Inter',sans-serif;overflow:hidden}
+h1,h2,h3,h4,h5,h6{font-family:'Space Grotesk',sans-serif}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg-card)}
+::-webkit-scrollbar-thumb{background:var(--border-lt);border-radius:3px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideR{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-up{animation:fadeUp .4s ease both}
+.fade-in{animation:fadeIn .3s ease both}
+.slide-r{animation:slideR .3s ease both}
+
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;transition:all .2s}
+.card:hover{border-color:var(--border-lt)}
+
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
+.badge-accent{background:var(--accent-dim);color:var(--accent)}
+.badge-gold{background:var(--gold-dim);color:var(--gold)}
+.badge-danger{background:var(--danger-dim);color:var(--danger)}
+.badge-success{background:var(--success-dim);color:var(--success)}
+.badge-warm{background:var(--warm-dim);color:var(--warm)}
+.badge-muted{background:rgba(94,114,104,.12);color:var(--muted)}
+
+.btn-p{background:var(--accent);color:var(--bg);font-weight:700;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;transition:all .15s;font-size:13px;font-family:inherit}
+.btn-p:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-s{background:transparent;color:var(--fg2);border:1px solid var(--border);padding:7px 16px;border-radius:8px;cursor:pointer;transition:all .15s;font-size:13px;font-family:inherit}
+.btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.btn-ghost{background:transparent;color:var(--fg2);border:none;padding:6px 12px;border-radius:8px;cursor:pointer;transition:all .15s;font-size:12px;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost:hover{color:var(--fg);background:var(--bg-hover)}
+
+.ipt{background:var(--bg-el);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--fg);font-size:13px;outline:none;transition:border-color .2s;width:100%;font-family:inherit}
+.ipt:focus{border-color:var(--accent)}
+.ipt::placeholder{color:var(--muted)}
+select.ipt{cursor:pointer}select.ipt option{background:var(--bg-card)}
+
+.nav-tab{position:relative;transition:color .2s;padding:0 16px}
+.nav-tab.active::after{content:'';position:absolute;bottom:-1px;left:12px;right:12px;height:2px;background:var(--accent);border-radius:2px}
+.nav-tab.active{color:var(--fg)!important}
+
+.chip{display:inline-flex;align-items:center;padding:4px 12px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--border);color:var(--fg2);background:transparent;user-select:none}
+.chip:hover{border-color:var(--border-lt);background:var(--bg-hover)}
+.chip.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.chip.gold-on{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
+
+.toast-c{position:fixed;top:20px;right:20px;z-index:9000;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg-el);border:1px solid var(--border-lt);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideR .3s ease;max-width:340px;font-size:13px}
+.toast.out{animation:fadeOt .3s ease forwards}
+@keyframes fadeOt{to{opacity:0;transform:translateX(20px)}}
+
+.stat-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+
+.leaflet-container{background:var(--bg)!important}
+.leaflet-control-zoom a{background:var(--bg-card)!important;color:var(--fg2)!important;border-color:var(--border)!important}
+.leaflet-control-zoom a:hover{background:var(--bg-el)!important;color:var(--fg)!important}
+.leaflet-control-attribution{background:rgba(8,13,11,.7)!important;color:var(--muted)!important;font-size:9px!important}
+.leaflet-control-attribution a{color:var(--accent)!important}
+.leaflet-popup-content-wrapper{background:var(--bg-card)!important;color:var(--fg)!important;border-radius:12px!important;border:1px solid var(--border)!important;box-shadow:0 8px 32px rgba(0,0,0,.5)!important}
+.leaflet-popup-tip{background:var(--bg-card)!important}
+.leaflet-popup-close-button{color:var(--muted)!important}
+.leaflet-popup-close-button:hover{color:var(--fg)!important}
+
+#cesiumContainer{position:absolute;inset:0;z-index:1;display:none}
+.mode-btn{background:transparent;color:var(--muted);border:1px solid transparent;border-radius:999px;padding:.45rem .75rem;cursor:pointer;transition:all .15s;font-size:10px}
+.mode-btn.active{background:rgba(0,212,170,.14);color:var(--accent);border-color:rgba(0,212,170,.35)}
+.mode-btn:hover{color:var(--fg);border-color:var(--border-lt)}
+
+.custom-marker{border-radius:50%;border:2px solid rgba(255,255,255,.3);transition:transform .15s}
+.custom-marker:hover{transform:scale(1.3);z-index:9999!important}
+
+.score-elite{background:var(--danger);box-shadow:0 0 10px rgba(239,68,68,.4)}
+.score-strong{background:var(--warm);box-shadow:0 0 8px rgba(232,168,50,.3)}
+.score-moderate{background:var(--gold);box-shadow:0 0 6px rgba(212,166,74,.3)}
+.score-low{background:var(--muted);box-shadow:none}
+.score-locked{background:#3a3a3a;border-color:#555;opacity:.6}
+
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(0,212,170,.2)!important}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(0,212,170,.5)!important;color:var(--bg)!important;font-weight:700;font-family:'Space Grotesk',sans-serif}
+
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:8000;animation:fadeIn .2s ease}
+.modal-c{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:92%;animation:fadeUp .3s ease;max-height:85vh;overflow-y:auto}
+
+.lead-card{padding:12px;border-radius:10px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.lead-card:hover{background:var(--bg-hover);border-color:var(--border-lt)}
+.lead-card.selected{background:var(--bg-el);border-color:var(--accent)}
+
+.filter-block{margin-bottom:16px}
+.filter-label{display:block;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.slider-val{font-family:'Geist Mono',monospace;font-size:12px;color:var(--accent);font-weight:500}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
+.toggle{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;color:var(--fg2);cursor:pointer;transition:color .15s}
+.toggle:hover{color:var(--fg)}
+.toggle input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px}
+
+@media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition-duration:0s!important}}
+@media(max-width:1024px){
+  .sidebar{display:none!important}
+  .lead-panel{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<div id="loader" style="position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s">
+  <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite"></div>
+  <p style="margin-top:14px;color:var(--muted);font-size:12px;letter-spacing:1.5px;font-family:'Space Grotesk'">URTHMAPPER</p>
+</div>
+
+<div id="app" class="h-screen flex flex-col" style="opacity:0;transition:opacity .4s">
+
+<nav class="h-12 flex items-center justify-between px-4 shrink-0" style="border-bottom:1px solid var(--border);background:var(--bg-card)">
+  <div class="flex items-center gap-5">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,var(--gold),var(--gold2))">
+        <i class="fa-solid fa-check text-[10px]" style="color:var(--bg)"></i>
+      </div>
+      <div class="leading-none">
+        <span class="font-heading font-bold text-sm tracking-tight">Urthmapper</span>
+        <span class="text-[9px] block" style="color:var(--muted)">Lead Console</span>
+      </div>
+    </div>
+    <div class="flex items-center h-12">
+      <button class="nav-tab active h-12 text-xs font-medium" style="color:var(--fg)" data-view="map"><i class="fa-solid fa-map-location-dot mr-1.5"></i>Map</button>
+      <button class="nav-tab h-12 text-xs font-medium" style="color:var(--muted)" data-view="leads"><i class="fa-solid fa-address-book mr-1.5"></i>Leads</button>
+      <button class="nav-tab h-12 text-xs font-medium" style="color:var(--muted)" data-view="dashboard"><i class="fa-solid fa-gauge-high mr-1.5"></i>Dashboard</button>
+      <button class="nav-tab h-12 text-xs font-medium" style="color:var(--muted)" data-view="analytics"><i class="fa-solid fa-chart-pie mr-1.5"></i>Analytics</button>
+    </div>
+  </div>
+  <div class="flex items-center gap-2">
+    <div class="relative hidden md:block">
+      <i class="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px]" style="color:var(--muted)"></i>
+      <input id="global-search" type="search" placeholder="Owner, parcel, address…" class="ipt pl-7 py-1 text-xs" style="width:200px;border-radius:6px" autocomplete="off">
+    </div>
+    <button class="btn-ghost" id="export-btn" title="Export CSV"><i class="fa-solid fa-file-export text-xs"></i><span class="hidden sm:inline">Export</span></button>
+    <button class="btn-ghost" id="share-btn" title="Share current view"><i class="fa-solid fa-share-nodes text-xs"></i><span class="hidden sm:inline">Share</span></button>
+    <button class="btn-ghost" id="help-btn" title="Help (?)"><i class="fa-solid fa-circle-question text-xs"></i></button>
+  </div>
+</nav>
+
+<div class="flex-1 flex overflow-hidden">
+
+<aside id="filter-sidebar" class="sidebar shrink-0 overflow-y-auto p-4" style="width:240px;border-right:1px solid var(--border);background:var(--bg-card)">
+  <div class="filter-block">
+    <label class="filter-label">Quick filters</label>
+    <div class="flex flex-wrap gap-1.5" id="quick-chips">
+      <span class="chip text-[10px]" data-quick="elite"><i class="fa-solid fa-star mr-1" style="color:var(--gold)"></i>Elite 70+</span>
+      <span class="chip text-[10px]" data-quick="hasphone"><i class="fa-solid fa-phone mr-1" style="color:var(--accent)"></i>Has phone</span>
+      <span class="chip text-[10px]" data-quick="oos"><i class="fa-solid fa-plane mr-1" style="color:var(--warm)"></i>Out-of-state</span>
+      <span class="chip text-[10px]" data-quick="heirs"><i class="fa-solid fa-landmark mr-1" style="color:var(--gold2)"></i>Heirs/estate</span>
+      <span class="chip text-[10px]" data-quick="cheap"><i class="fa-solid fa-tag mr-1" style="color:var(--success)"></i>Under $25K</span>
+      <span class="chip text-[10px]" data-quick="strict"><i class="fa-solid fa-circle-check mr-1" style="color:var(--accent)"></i>Buyer fit</span>
+    </div>
+  </div>
+
+  <div class="filter-block">
+    <label class="filter-label">View</label>
+    <div class="flex flex-wrap gap-1.5" id="view-chips">
+      <span class="chip text-[10px] on" data-viewf="all">All leads</span>
+      <span class="chip text-[10px]" data-viewf="favorites"><i class="fa-solid fa-star mr-1" style="color:var(--gold)"></i>Favorites</span>
+      <span class="chip text-[10px]" data-viewf="contacted">Contacted</span>
+      <span class="chip text-[10px]" data-viewf="interested">Interested</span>
+    </div>
+  </div>
+
+  <div class="filter-block">
+    <label class="filter-label">County</label>
+    <div class="flex flex-wrap gap-1.5" id="county-chips"></div>
+  </div>
+
+  <div class="filter-block">
+    <label class="filter-label">Owner type</label>
+    <div class="flex flex-wrap gap-1.5" id="owner-chips"></div>
+  </div>
+
+  <div class="filter-block">
+    <div class="slider-header">
+      <label class="filter-label" style="margin:0">Min appeal score</label>
+      <span class="slider-val" id="score-val">0</span>
+    </div>
+    <input type="range" id="score-min" min="0" max="100" value="0" step="1">
+  </div>
+
+  <div class="filter-block">
+    <div class="slider-header">
+      <label class="filter-label" style="margin:0">Max land value</label>
+      <span class="slider-val" id="val-val">No limit</span>
+    </div>
+    <input type="range" id="val-max" min="0" max="200000" value="200000" step="1000">
+    <div class="text-[9px] mt-1" style="color:var(--muted)">Buyer budget: $25K</div>
+  </div>
+
+  <div class="filter-block">
+    <div class="slider-header">
+      <label class="filter-label" style="margin:0">Min frontage</label>
+      <span class="slider-val" id="front-val">0 ft</span>
+    </div>
+    <input type="range" id="front-min" min="0" max="500" value="0" step="10">
+  </div>
+
+  <div class="filter-block">
+    <label class="filter-label">Flood zone</label>
+    <div class="flex flex-wrap gap-1.5" id="flood-chips">
+      <span class="chip text-[10px]" data-flood="none">None</span>
+      <span class="chip text-[10px]" data-flood="x">X (minimal)</span>
+      <span class="chip text-[10px]" data-flood="ae">AE (high)</span>
+    </div>
+  </div>
+
+  <div class="filter-block">
+    <label class="filter-label">Toggles</label>
+    <label class="toggle"><input type="checkbox" id="t-locked"> Hide locked leads</label>
+    <label class="toggle"><input type="checkbox" id="t-phone"> Has phone number</label>
+    <label class="toggle"><input type="checkbox" id="t-dnc"> Hide DNC numbers</label>
+    <label class="toggle"><input type="checkbox" id="t-oos"> Out-of-state only</label>
+    <label class="toggle"><input type="checkbox" id="t-absentee"> Absentee only</label>
+    <label class="toggle"><input type="checkbox" id="t-mh"> MH-allowed zoning</label>
+    <label class="toggle"><input type="checkbox" id="t-cluster" checked> Cluster markers</label>
+  </div>
+
+  <button class="btn-s w-full text-xs mt-2" id="reset-btn"><i class="fa-solid fa-rotate-left mr-1.5"></i>Reset all filters</button>
+</aside>
+
+<div id="view-map" class="view-panel flex-1 relative">
+  <div id="map" class="w-full h-full"></div>
+  <div class="absolute top-3 left-3 z-[1000] flex items-center gap-2 rounded-lg bg-[rgba(15,22,19,.85)] border border-[var(--border)] p-2 text-[10px]">
+    <button id="map-mode-2d" class="mode-btn active" type="button">2D</button>
+    <button id="map-mode-3d" class="mode-btn" type="button">3D</button>
+  </div>
+  <div id="cesiumContainer" class="w-full h-full hidden"></div>
+  <div class="absolute bottom-3 left-3 flex items-center gap-3 text-[10px] z-[1000] px-3 py-1.5 rounded-lg" style="background:rgba(15,22,19,.85);border:1px solid var(--border);color:var(--muted)">
+    <span id="map-count">—</span>
+    <span id="map-coords"></span>
+  </div>
+  <div class="absolute top-3 right-3 z-[1000] p-3 rounded-xl text-[10px]" style="background:rgba(15,22,19,.85);border:1px solid var(--border)">
+    <div class="font-heading font-bold text-[9px] uppercase tracking-wider mb-2" style="color:var(--muted)">Appeal Score</div>
+    <div class="flex flex-col gap-1.5">
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--danger)"></span>70+ Elite</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--warm)"></span>50–69 Strong</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--gold)"></span>30–49 Moderate</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--muted)"></span>&lt;30 Low</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:#3a3a3a"></span>Locked</div>
+    </div>
+  </div>
+</div>
+
+<div id="view-leads" class="view-panel flex-1 overflow-y-auto p-6 hidden"></div>
+
+<div id="view-dashboard" class="view-panel flex-1 overflow-y-auto p-6 hidden"></div>
+
+<div id="view-analytics" class="view-panel flex-1 overflow-y-auto p-6 hidden"></div>
+
+<aside id="detail-panel" class="lead-panel shrink-0 overflow-y-auto hidden" style="width:340px;border-left:1px solid var(--border);background:var(--bg-card)">
+  <div id="detail-content" class="p-5"></div>
+</aside>
+
+</div>
+
+<footer class="h-7 flex items-center justify-between px-4 text-[9px] shrink-0" style="border-top:1px solid var(--border);background:var(--bg-card);color:var(--muted)">
+  <span><strong style="color:var(--fg2)">Urthmapper</strong> · Pinellas / Hillsborough / Pasco / Manatee / Sarasota GIS + Florida OneMap</span>
+  <span id="clock"></span>
+</footer>
+
+</div>
+
+<div class="toast-c" id="toast-c"></div>
+<div id="modal-root"></div>
+
+<script>
+let _s=42; function sr(){_s=(_s*16807)%2147483647;return(_s-1)/2147483646}
+
+const COUNTIES=['Pinellas','Hillsborough','Pasco','Manatee','Sarasota'];
+const PARCEL_BOUNDARY_SERVICES={
+  Pinellas:{
+    queryUrl:'https://egis.pinellas.gov/gis/rest/services/AGO/Parcels/MapServer/0/query'
+  }
+};
+const OWNER_TYPES=['Individual','LLC','Trust','Estate','Heirs','Corporate'];
+const STATUSES=['New','Contacted','Interested','Pass'];
+const ZONINGS=['R-1','R-2','R-3','MH','RMF','B-1','B-2','I-1','AG','RM'];
+const FLOOD_TYPES=['None','X','AE'];
+const ADDRESSES_ST=['Cypress','Mangrove','Palmetto','Sunset','Beach','Gulf','Bay','Harbor','Marina','Wharf','Ocean','Coral','Sand','Driftwood','Seascape'];
+const ADDRESSES_T=['Rd','Dr','Ln','Ave','Way','Trl','Ct','Blvd'];
+const FIRST_NAMES=['James','Mary','Robert','Patricia','John','Jennifer','Michael','Linda','William','Elizabeth','David','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Sarah','Charles','Karen','Daniel','Nancy','Matthew','Lisa','Anthony','Betty','Mark','Margaret','Donald','Sandra'];
+const LAST_NAMES=['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Sanchez','Clark','Lewis','Robinson','Walker'];
+
+let prospects = [];
+
+async function loadRealLeads(){
+  const loaded = [];
+
+  if(typeof leadData !== 'undefined' && Array.isArray(leadData)){
+    loaded.push(...leadData);
+    console.log(`Loaded ${leadData.length} leads from leads-data.js`);
+  }
+
+  if(loaded.length === 0){
+    try {
+      const response = await fetch('clearwater-leads.json', { cache: 'no-cache' });
+      if(!response.ok) throw new Error(`HTTP ${response.status}`);
+      const json = await response.json();
+      if(Array.isArray(json) && json.length){
+        loaded.push(...json);
+        console.log(`Loaded ${json.length} leads from clearwater-leads.json`);
+      }
+    } catch (error) {
+      console.warn('No local lead feed available:', error.message);
+    }
+  }
+
+  prospects = loaded;
+  loadSaved();
+  buildLeadFilters();
+  await loadParcelBoundaries(prospects);
+
+  if(prospects.length === 0){
+    showNoDataBanner();
+  }
+}
+
+function getCountyParcelService(county){
+  return PARCEL_BOUNDARY_SERVICES[county] || null;
+}
+
+async function fetchParcelBoundary(lead){
+  const service=getCountyParcelService(lead.county);
+  if(!service||!lead.lat||!lead.lng) return null;
+  try{
+    const url=new URL(service.queryUrl);
+    url.searchParams.set('geometry',`${lead.lng},${lead.lat}`);
+    url.searchParams.set('geometryType','esriGeometryPoint');
+    url.searchParams.set('inSR','4326');
+    url.searchParams.set('spatialRel','esriSpatialRelIntersects');
+    url.searchParams.set('outFields','*');
+    url.searchParams.set('outSR','4326');
+    url.searchParams.set('returnGeometry','true');
+    url.searchParams.set('f','geojson');
+
+    const response=await fetch(url.toString(),{cache:'no-cache'});
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+    const geojson=await response.json();
+    if(Array.isArray(geojson.features)&&geojson.features.length){
+      const feature=geojson.features[0];
+      lead.geometry=feature.geometry;
+      lead.boundarySource='pinellas-geojson';
+      return feature.geometry;
+    }
+  }catch(error){
+    console.warn(`Parcel boundary fetch failed for ${lead.parcelId}:`,error.message);
+  }
+  return null;
+}
+
+async function loadParcelBoundaries(leads){
+  const promises=leads.map(async lead=>{
+    if(lead.geometry) return lead.geometry;
+    return fetchParcelBoundary(lead);
+  });
+  await Promise.all(promises);
+}
+
+function buildLeadFilters(){
+  const countySet = [...new Set(prospects.map(p => p.county))].sort();
+  const ownerSet = [...new Set(prospects.map(p => p.ownerType))].sort();
+
+  document.getElementById('county-chips').innerHTML = countySet.map(c => `<span class="chip text-[10px]" data-county="${c}">${c}</span>`).join('');
+  document.getElementById('owner-chips').innerHTML = ownerSet.map(t => `<span class="chip text-[10px]" data-owner="${t}">${t}</span>`).join('');
+}
+
+function showNoDataBanner(){
+  if(document.getElementById('no-data-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'no-data-banner';
+  banner.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:950;padding:14px 18px;border-radius:14px;background:rgba(239,68,68,.95);color:#fff;font-size:13px;box-shadow:0 18px 48px rgba(0,0,0,.45);max-width:calc(100%-40px);text-align:center;';
+  banner.textContent = 'No real lead data loaded. Add `clearwater-leads.json` or include `leads-data.js` with verified data.';
+  document.body.appendChild(banner);
+}
+
+const S={
+  view:'map',
+  filters:{
+    search:'',quick:null,view:'all',counties:[],ownerTypes:[],
+    scoreMin:0,valMax:200000,frontMin:0,flood:null,
+    hideLocked:false,phoneOnly:false,hideDnc:false,
+    oosOnly:false,absenteeOnly:false,mhOnly:false,cluster:true
+  },
+  sort:'score',
+  sortAsc:false,
+  selected:null,
+  detailOpen:false,
+  mapMode:'2D'
+};
+
+function loadSaved(){
+  try{
+    const d=JSON.parse(localStorage.getItem('sg-leads')||'{}');
+    prospects.forEach(p=>{if(d[p.id]){p.status=d[p.id].s||'New';p.favorite=d[p.id].f||false;}});
+  }catch(e){}
+}
+function saveLead(p){try{const d=JSON.parse(localStorage.getItem('sg-leads')||'{}');d[p.id]={s:p.status,f:p.favorite};localStorage.setItem('sg-leads',JSON.stringify(d));}catch(e){}}
+loadSaved();
+
+function toast(msg,type='info'){
+  const c=document.getElementById('toast-c');
+  const t=document.createElement('div');t.className='toast';
+  const icons={info:'fa-circle-info',success:'fa-circle-check',error:'fa-circle-xmark',warn:'fa-triangle-exclamation'};
+  const colors={info:'var(--accent)',success:'var(--success)',error:'var(--danger)',warn:'var(--warm)'};
+  t.innerHTML=`<i class="fa-solid ${icons[type]||icons.info}" style="color:${colors[type]||colors.info}"></i><span style="color:var(--fg2)">${msg}</span>`;
+  c.appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),300)},3500);
+}
+
+function applyFilters(){
+  const f=S.filters;
+  return prospects.filter(p=>{
+    if(f.search){
+      const q=f.search.toLowerCase();
+      if(!p.owner.toLowerCase().includes(q)&&!p.parcelId.toLowerCase().includes(q)&&!p.address.toLowerCase().includes(q)) return false;
+    }
+    if(f.quick==='elite'&&p.score<70) return false;
+    if(f.quick==='hasphone'&&!p.phone) return false;
+    if(f.quick==='oos'&&!p.isOOS) return false;
+    if(f.quick==='heirs'&&!['Heirs','Estate','Trust'].includes(p.ownerType)) return false;
+    if(f.quick==='cheap'&&p.landValue>25000) return false;
+    if(f.quick==='strict'&&(p.landValue>25000||p.floodZone==='AE'||p.frontage<50)) return false;
+    if(f.view==='favorites'&&!p.favorite) return false;
+    if(f.view==='contacted'&&p.status!=='Contacted') return false;
+    if(f.view==='interested'&&p.status!=='Interested') return false;
+    if(f.counties.length&&!f.counties.includes(p.county)) return false;
+    if(f.ownerTypes.length&&!f.ownerTypes.includes(p.ownerType)) return false;
+    if(p.score<f.scoreMin) return false;
+    if(p.landValue>f.valMax&&f.valMax<200000) return false;
+    if(p.frontage<f.frontMin) return false;
+    if(f.flood&&p.floodZone!==f.flood&&!(f.flood==='none'&&(p.floodZone==='None'||p.floodZone==='X'))) return false;
+    if(f.hideLocked&&p.isLocked) return false;
+    if(f.phoneOnly&&!p.phone) return false;
+    if(f.hideDnc&&p.isDNC) return false;
+    if(f.oosOnly&&!p.isOOS) return false;
+    if(f.absenteeOnly&&!p.isAbsentee) return false;
+    if(f.mhOnly&&!p.isMH) return false;
+    return true;
+  });
+}
+
+function sortLeads(arr){
+  const dir=S.sortAsc?1:-1;
+  const key=S.sort;
+  return [...arr].sort((a,b)=>{
+    let va=a[key],vb=b[key];
+    if(typeof va==='string') va=va.toLowerCase();
+    if(typeof vb==='string') vb=vb.toLowerCase();
+    return va<vb?-1*dir:va>vb?1*dir:0;
+  });
+}
+
+let map,clusterGroup,markers={},parcelLayerGroup=null;
+
+function initMap(){
+  map=L.map('map',{zoomControl:true,attributionControl:true}).setView([27.97,-82.76],10);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    subdomains:'abcd',maxZoom:18
+  }).addTo(map);
+
+  const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:18});
+  L.control.layers({'Dark':L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd'}),'Satellite':satellite},null,{position:'topright'}).addTo(map);
+
+  clusterGroup=L.markerClusterGroup({spiderfyOnMaxZoom:true,showCoverageOnHover:false,maxClusterRadius:40,iconCreateFunction:function(cluster){
+    const n=cluster.getChildCount();
+    return L.divIcon({html:`<div style="background:rgba(0,212,170,.35);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:12px;color:var(--bg)">${n}</div>`,className:'',iconSize:[36,36]});
+  }});
+
+  parcelLayerGroup=L.layerGroup().addTo(map);
+  parcelLayerGroup=L.layerGroup().addTo(map);
+  map.addLayer(clusterGroup);
+  init3DViewer();
+  switchMapMode('2D');
+  renderMarkers();
+
+  map.on('mousemove',e=>{
+    document.getElementById('map-coords').textContent=`${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+  });
+}
+
+let cesiumViewer;
+
+function init3DViewer(){
+  if(typeof Cesium==='undefined') return;
+  cesiumViewer=new Cesium.Viewer('cesiumContainer',{
+    imageryProvider:new Cesium.UrlTemplateImageryProvider({url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',credit:new Cesium.Credit('Esri World Imagery')}),
+    terrainProvider:new Cesium.EllipsoidTerrainProvider(),
+    baseLayerPicker:false,geocoder:false,timeline:false,animation:false,homeButton:false,sceneModePicker:false,fullscreenButton:false,navigationHelpButton:false,selectionIndicator:false,infoBox:false,
+    shouldAnimate:true
+  });
+  cesiumViewer.scene.globe.enableLighting=true;
+  cesiumViewer.scene.camera.setView({destination:Cesium.Cartesian3.fromDegrees(-82.76,27.97,130000),orientation:{heading:Cesium.Math.toRadians(20),pitch:Cesium.Math.toRadians(-45),roll:0}});
+
+  const handler=new Cesium.ScreenSpaceEventHandler(cesiumViewer.scene.canvas);
+  handler.setInputAction(click=>{
+    const picked=cesiumViewer.scene.pick(click.position);
+    if(picked&&picked.id&&picked.id.leadId){
+      const lead=prospects.find(p=>p.id===picked.id.leadId);
+      if(lead) selectLead(lead);
+    }
+  },Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  handler.setInputAction(move=>{
+    const cartesian=cesiumViewer.camera.pickEllipsoid(move.endPosition,cesiumViewer.scene.globe.ellipsoid);
+    if(cartesian){
+      const cartographic=Cesium.Cartographic.fromCartesian(cartesian);
+      document.getElementById('map-coords').textContent=`${Cesium.Math.toDegrees(cartographic.latitude).toFixed(4)}, ${Cesium.Math.toDegrees(cartographic.longitude).toFixed(4)}`;
+    }
+  },Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+}
+
+function render3DParcels(){
+  if(!cesiumViewer) return;
+  cesiumViewer.dataSources.removeAll();
+  const features=applyFilters().filter(p=>p.geometry).map(p=>({
+    type:'Feature',
+    geometry:p.geometry,
+    properties:{leadId:p.id,score:p.score,owner:p.owner,county:p.county,parcelId:p.parcelId}
+  }));
+  if(!features.length) return;
+
+  const featureCollection={type:'FeatureCollection',features};
+  Cesium.GeoJsonDataSource.load(featureCollection,{clampToGround:true}).then(ds=>{
+    cesiumViewer.dataSources.add(ds);
+    ds.entities.values.forEach(entity=>{
+      const props=entity.properties;
+      const leadId=props?.leadId?.getValue ? props.leadId.getValue() : null;
+      const lead=prospects.find(x=>x.id===leadId);
+      const color=lead ? (lead.score>=70?Cesium.Color.fromCssColorString('#ef4444'):(lead.score>=50?Cesium.Color.fromCssColorString('#e8a832'):(lead.score>=30?Cesium.Color.fromCssColorString('#d4a64a'):Cesium.Color.fromCssColorString('#5e7268')))) : Cesium.Color.fromCssColorString('#5e7268');
+      const height=lead ? Math.min(120,Math.max(20,lead.score * 2 + (lead.landValue||0) / 1500)) : 25;
+      if(entity.polygon){
+        entity.polygon.height=0;
+        entity.polygon.extrudedHeight=height;
+        entity.polygon.material=color.withAlpha(0.25);
+        entity.polygon.outline=true;
+        entity.polygon.outlineColor=color.withAlpha(0.9);
+        entity.polygon.outlineWidth=2;
+      }
+      entity.name=lead ? `${lead.owner} · ${lead.parcelId}` : 'Parcel';
+      entity.description=lead ? `Score: ${lead.score}\nCounty: ${lead.county}` : undefined;
+    });
+  }).catch(error=>{
+    console.warn('Cesium parcel data load failed:',error);
+  });
+}
+
+function switchMapMode(mode){
+  S.mapMode=mode;
+  document.getElementById('map-mode-2d').classList.toggle('active',mode==='2D');
+  document.getElementById('map-mode-3d').classList.toggle('active',mode==='3D');
+  const mapEl=document.getElementById('map');
+  const cesiumEl=document.getElementById('cesiumContainer');
+  if(mode==='3D'){
+    mapEl.classList.add('hidden');
+    cesiumEl.classList.remove('hidden');
+    if(cesiumViewer){
+      cesiumViewer.resize&&cesiumViewer.resize();
+      cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(-82.76,27.97,130000),orientation:{heading:Cesium.Math.toRadians(30),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8});
+      render3DPoints();
+    }
+  } else {
+    cesiumEl.classList.add('hidden');
+    mapEl.classList.remove('hidden');
+    map.invalidateSize();
+  }
+}
+
+function scoreClass(p){
+  if(p.isLocked) return 'score-locked';
+  if(p.score>=70) return 'score-elite';
+  if(p.score>=50) return 'score-strong';
+  if(p.score>=30) return 'score-moderate';
+  return 'score-low';
+}
+
+function renderMarkers(){
+  clusterGroup.clearLayers();
+  markers={};
+  const filtered=applyFilters();
+  filtered.forEach(p=>{
+    const cls=scoreClass(p);
+    const size=p.isLocked?10:p.score>=70?14:p.score>=50?12:10;
+    const icon=L.divIcon({
+      className:'',
+      html:`<div class="custom-marker ${cls}" style="width:${size}px;height:${size}px"></div>`,
+      iconSize:[size,size],iconAnchor:[size/2,size/2]
+    });
+    const m=L.marker([p.lat,p.lng],{icon});
+    m.on('click',()=>selectLead(p));
+    clusterGroup.addLayer(m);
+    markers[p.id]=m;
+  });
+  document.getElementById('map-count').textContent=`${filtered.length} leads shown`;
+  if(S.mapMode==='3D') render3DParcels();
+}
+
+function styleParcelLayer(lead){
+  const baseColor=lead.isLocked? '#5e7268' : lead.score>=70? '#ef4444' : lead.score>=50? '#e8a832' : lead.score>=30? '#d4a64a' : '#6b7280';
+  return {color:baseColor,weight:2.5,opacity:0.95,fill:false,dashArray:'5,5'};
+}
+
+function renderParcelBorders(){
+  if(!parcelLayerGroup) return;
+  parcelLayerGroup.clearLayers();
+  applyFilters().forEach(lead=>{
+    if(!lead.geometry) return;
+    const layer=L.geoJSON(lead.geometry,{style:()=>styleParcelLayer(lead)});
+    layer.eachLayer(l=>{
+      l.on('mouseover',()=>l.setStyle({weight:4,color:'#00d4aa',dashArray:null}));
+      l.on('mouseout',()=>l.setStyle(styleParcelLayer(lead)));
+      l.on('click',()=>selectLead(lead));
+    });
+    layer.addTo(parcelLayerGroup);
+  });
+}
+
+function selectLead(p){
+  S.selected=p;S.detailOpen=true;
+  openDetailPanel(p);
+  if(map) map.flyTo([p.lat,p.lng],13,{duration:.8});
+  if(cesiumViewer&&S.mapMode==='3D'){
+    cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(p.lng,p.lat,1000),orientation:{heading:Cesium.Math.toRadians(15),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8});
+  }
+  document.querySelectorAll('.lead-card').forEach(c=>c.classList.remove('selected'));
+  const card=document.querySelector(`.lead-card[data-id="${p.id}"]`);
+  if(card){card.classList.add('selected');card.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+
+function openDetailPanel(p){
+  const dp=document.getElementById('detail-panel');
+  const dc=document.getElementById('detail-content');
+  const sc=scoreClass(p);
+  const scoreLabel=p.isLocked?'Locked':p.score>=70?'Elite':p.score>=50?'Strong':p.score>=30?'Moderate':'Low';
+  const scoreBadge=p.isLocked?'badge-muted':p.score>=70?'badge-danger':p.score>=50?'badge-warm':p.score>=30?'badge-gold':'badge-muted';
+
+  dc.innerHTML=`
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="badge ${scoreBadge}"><i class="fa-solid fa-star mr-1"></i>${p.score} ${scoreLabel}</span>
+        ${p.isLocked?'<span class="badge badge-muted"><i class="fa-solid fa-lock mr-1"></i>Locked</span>':''}
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="toggleFav(${p.id})" class="btn-ghost px-2" title="Favorite"><i class="fa-${p.favorite?'solid':'regular'} fa-star text-xs" style="color:${p.favorite?'var(--gold)':'var(--muted)'}"></i></button>
+        <button onclick="closeDetail()" class="btn-ghost px-2" title="Close"><i class="fa-solid fa-xmark text-xs"></i></button>
+      </div>
+    </div>
+    <h3 class="font-heading font-bold text-base mb-1" style="color:var(--fg)">${p.owner}</h3>
+    <p class="text-xs mb-4" style="color:var(--muted)">${p.parcelId} · ${p.ownerType}</p>
+
+    <div class="space-y-2.5 text-[13px]">
+      <div class="flex justify-between"><span style="color:var(--muted)">Address</span><span class="text-right">${p.address}, ${p.city}, FL</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">County</span><span>${p.county}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Mailing</span><span class="text-right">${p.mailState}${p.isOOS?' (Out-of-state)':''}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Acreage</span><span class="font-mono">${p.acreage} ac</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Zoning</span><span class="badge badge-accent">${p.zoning}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Frontage</span><span class="font-mono">${p.frontage} ft</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Flood</span><span style="color:${p.floodZone==='AE'?'var(--danger)':'var(--success)'}">${p.floodZone==='None'?'None':p.floodZone}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Land value</span><span class="font-heading font-bold" style="color:var(--accent)">$${p.landValue.toLocaleString()}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Total appraisal</span><span>$${p.appraisalTotal.toLocaleString()}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Years owned</span><span>${p.yrsOwned} yrs</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Multi-parcel</span><span>${p.multiParcel>1?p.multiParcel+' parcels':'Single'}</span></div>
+      ${p.phone?`<div class="flex justify-between"><span style="color:var(--muted)">Phone</span><a href="tel:${p.phone}" class="font-mono" style="color:var(--accent)">${p.phone}</a></div>`:''}
+      ${p.isDNC?'<div class="text-[10px] px-2 py-1 rounded" style="background:var(--danger-dim);color:var(--danger)"><i class="fa-solid fa-ban mr-1"></i>DNC — Do Not Call</div>':''}
+    </div>
+
+    <hr class="my-4" style="border-color:var(--border)">
+
+    <div class="mb-4">
+      <label class="filter-label">Status</label>
+      <div class="flex flex-wrap gap-1.5">
+        ${STATUSES.map(st=>`<span class="chip text-[10px] ${p.status===st?'on':''}" onclick="setLeadStatus(${p.id},'${st}')">${st}</span>`).join('')}
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      ${p.phone&&!p.isDNC?`<button class="btn-p text-xs w-full" onclick="toast('Calling ${p.phone}...','info')"><i class="fa-solid fa-phone mr-2"></i>Call Owner</button>`:''}
+      ${p.phone?`<button class="btn-s text-xs w-full" onclick="toast('SMS drafted','info')"><i class="fa-solid fa-comment mr-2"></i>Send SMS</button>`:''}
+      <button class="btn-s text-xs w-full" onclick="toast('Mail template generated','success')"><i class="fa-solid fa-envelope mr-2"></i>Direct Mail</button>
+      <button class="btn-s text-xs w-full" onclick="toast('Note saved','success')"><i class="fa-solid fa-sticky-note mr-2"></i>Add Note</button>
+    </div>
+
+    <hr class="my-4" style="border-color:var(--border)">
+    <div class="filter-label mb-2">Why this score</div>
+    <div class="space-y-1.5 text-[11px]">
+      ${p.landValue<=25000?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Land under $25K (+25)</div>':'<div class="flex items-center gap-2" style="color:var(--muted)"><i class="fa-solid fa-circle"></i>Land $'+p.landValue.toLocaleString()+'</div>'}
+      ${p.frontage>=50?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Frontage 50+ ft (+15)</div>':''}
+      ${p.isOOS?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Out-of-state owner (+15)</div>':''}
+      ${p.isAbsentee?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Absentee owner (+10)</div>':''}
+      ${['Heirs','Estate','Trust'].includes(p.ownerType)?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>'+p.ownerType+' owner (+10)</div>':''}
+      ${p.floodZone==='AE'?'<div class="flex items-center gap-2" style="color:var(--danger)"><i class="fa-solid fa-times-circle"></i>AE flood zone (-10)</div>':''}
+      ${p.phone&&!p.isDNC?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Has reachable phone (+10)</div>':''}
+    </div>
+  `;
+  dp.classList.remove('hidden');
+  dp.classList.add('slide-r');
+}
+
+function closeDetail(){
+  document.getElementById('detail-panel').classList.add('hidden');
+  S.detailOpen=false;S.selected=null;
+  document.querySelectorAll('.lead-card').forEach(c=>c.classList.remove('selected'));
+}
+
+function toggleFav(id){
+  const p=prospects.find(x=>x.id===id);
+  if(!p) return;
+  p.favorite=!p.favorite;
+  saveLead(p);
+  if(S.selected&&S.selected.id===id) openDetailPanel(p);
+  toast(p.favorite?'Added to favorites':'Removed from favorites','success');
+  refreshCurrentView();
+}
+
+function setLeadStatus(id,status){
+  const p=prospects.find(x=>x.id===id);
+  if(!p) return;
+  p.status=status;
+  saveLead(p);
+  if(S.selected&&S.selected.id===id) openDetailPanel(p);
+  toast(`Lead marked as ${status}`,'success');
+  refreshCurrentView();
+}
+
+document.querySelectorAll('.nav-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const view=btn.dataset.view;
+    if(view===S.view) return;
+    switchView(view);
+  });
+});
+
+function switchView(view){
+  S.view=view;
+  document.querySelectorAll('.nav-tab').forEach(b=>{
+    b.classList.toggle('active',b.dataset.view===view);
+    b.style.color=b.dataset.view===view?'var(--fg)':'var(--muted)';
+  });
+  document.querySelectorAll('.view-panel').forEach(p=>p.classList.add('hidden'));
+  const vp=document.getElementById('view-'+view);
+  if(vp){vp.classList.remove('hidden');vp.classList.add('fade-in');}
+
+  const sidebar=document.getElementById('filter-sidebar');
+  if(view==='map'){sidebar.style.display='';renderMarkers();}
+  else{sidebar.style.display='none';}
+
+  if(view==='dashboard') renderDashboard();
+  if(view==='leads') renderLeadsView();
+  if(view==='analytics') setTimeout(renderAnalytics,100);
+
+  if(view==='dashboard'||view==='analytics') closeDetail();
+}
+
+function refreshCurrentView(){
+  if(S.view==='map') renderMarkers();
+  if(S.view==='leads') renderLeadsView();
+  if(S.view==='dashboard') renderDashboard();
+  if(S.view==='analytics') renderAnalytics();
+}
+
+function renderLeadsView(){
+  const filtered=sortLeads(applyFilters());
+  const el=document.getElementById('view-leads');
+  el.innerHTML=`
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div>
+        <h1 class="font-heading text-xl font-bold">Lead Management</h1>
+        <p class="text-xs mt-1" style="color:var(--muted)">${filtered.length} leads matching current filters</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <select class="ipt text-xs py-1.5" style="width:180px" id="sort-select">
+          <option value="score" ${S.sort==='score'?'selected':''}>Top score</option>
+          <option value="landValue" ${S.sort==='landValue'?'selected':''}>Cheapest land</option>
+          <option value="acreage" ${S.sort==='acreage'?'selected':''}>Largest acreage</option>
+          <option value="frontage" ${S.sort==='frontage'?'selected':''}>Most frontage</option>
+          <option value="yrsOwned" ${S.sort==='yrsOwned'?'selected':''}>Longest tenure</option>
+          <option value="multiParcel" ${S.sort==='multiParcel'?'selected':''}>Multi-parcel</option>
+        </select>
+      </div>
+    </div>
+    <div class="card overflow-x-auto">
+      <table class="w-full border-collapse text-[13px]">
+        <thead><tr>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="score">Score <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">Parcel</th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="owner">Owner <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">County</th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="acreage">Acres <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="landValue">Value <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">Phone</th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">Status</th>
+          <th class="px-4 py-3" style="border-bottom:1px solid var(--border)"></th>
+        </tr></thead>
+        <tbody>
+          ${filtered.map(p=>{
+            const sc=scoreClass(p);
+            const sb=p.score>=70?'badge-danger':p.score>=50?'badge-warm':p.score>=30?'badge-gold':'badge-muted';
+            const stb=p.status==='Contacted'?'badge-warm':p.status==='Interested'?'badge-success':p.status==='Pass'?'badge-muted':'badge-accent';
+            return `<tr class="cursor-pointer transition-colors hover:bg-[var(--bg-el)]" onclick="selectLeadFromTable(${p.id})" style="border-bottom:1px solid var(--border)">
+              <td class="px-4 py-3"><span class="badge ${sb}">${p.score}</span></td>
+              <td class="px-4 py-3 font-mono text-xs" style="color:var(--accent)">${p.parcelId}</td>
+              <td class="px-4 py-3 font-medium" style="color:var(--fg)">${p.owner.length>25?p.owner.substring(0,25)+'…':p.owner}</td>
+              <td class="px-4 py-3" style="color:var(--fg2)">${p.county}</td>
+              <td class="px-4 py-3 font-mono">${p.acreage}</td>
+              <td class="px-4 py-3 font-heading font-semibold" style="color:var(--accent)">$${p.landValue.toLocaleString()}</td>
+              <td class="px-4 py-3 font-mono text-xs">${p.phone||'—'}</td>
+              <td class="px-4 py-3"><span class="badge ${stb}">${p.status}</span></td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-1">
+                  <button onclick="event.stopPropagation();toggleFav(${p.id})" class="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--bg-hover)]" style="color:${p.favorite?'var(--gold)':'var(--muted)'}"><i class="fa-${p.favorite?'solid':'regular'} fa-star text-[10px]"></i></button>
+                  ${p.phone&&!p.isDNC?`<button onclick="event.stopPropagation();toast('Calling ${p.phone}','info')" class="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--bg-hover)]" style="color:var(--accent)"><i class="fa-solid fa-phone text-[10px]"></i></button>`:''}
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const ss=el.querySelector('#sort-select');
+  if(ss) ss.addEventListener('change',e=>{
+    S.sort=e.target.value;S.sortAsc=false;
+    renderLeadsView();
+  });
+
+  el.querySelectorAll('th[data-sort]').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const f=th.dataset.sort;
+      if(S.sort===f) S.sortAsc=!S.sortAsc;
+      else{S.sort=f;S.sortAsc=false;}
+      renderLeadsView();
+    });
+  });
+}
+
+function selectLeadFromTable(id){
+  const p=prospects.find(x=>x.id===id);
+  if(!p) return;
+  selectLead(p);
+}
+
+function renderDashboard(){
+  const filtered=applyFilters();
+  const totalVal=filtered.reduce((a,p)=>a+p.landValue,0);
+  const avgScore=filtered.length?Math.round(filtered.reduce((a,p)=>a+p.score,0)/filtered.length):0;
+  const eliteCount=filtered.filter(p=>p.score>=70).length;
+  const contactedCount=filtered.filter(p=>p.status==='Contacted').length;
+  const interestedCount=filtered.filter(p=>p.status==='Interested').length;
+  const phoneCount=filtered.filter(p=>p.phone&&!p.isDNC).length;
+  const oosCount=filtered.filter(p=>p.isOOS).length;
+
+  const el=document.getElementById('view-dashboard');
+  el.innerHTML=`
+    <div class="mb-5">
+      <h1 class="font-heading text-2xl font-bold tracking-tight">Pipeline Overview</h1>
+      <p class="text-xs mt-1" style="color:var(--muted)">Your Urthmapper lead pipeline at a glance.</p>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+      <div class="card p-5 fade-up relative overflow-hidden" style="animation-delay:0ms">
+        <div class="stat-bar" style="background:var(--accent)"></div>
+        <div class="flex items-center justify-between mb-2"><span class="text-xs" style="color:var(--muted)">Total Leads</span><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--accent-dim);color:var(--accent)"><i class="fa-solid fa-map-pin text-xs"></i></div></div>
+        <div class="font-heading font-bold text-2xl">${filtered.length}</div>
+        <div class="text-[10px] mt-1" style="color:var(--muted)">${prospects.length} total in inventory</div>
+      </div>
+      <div class="card p-5 fade-up relative overflow-hidden" style="animation-delay:60ms">
+        <div class="stat-bar" style="background:var(--danger)"></div>
+        <div class="flex items-center justify-between mb-2"><span class="text-xs" style="color:var(--muted)">Elite Leads</span><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--danger-dim);color:var(--danger)"><i class="fa-solid fa-star text-xs"></i></div></div>
+        <div class="font-heading font-bold text-2xl">${eliteCount}</div>
+        <div class="text-[10px] mt-1" style="color:var(--muted)">Score 70+ priority</div>
+      </div>
+      <div class="card p-5 fade-up relative overflow-hidden" style="animation-delay:120ms">
+        <div class="stat-bar" style="background:var(--gold)"></div>
+        <div class="flex items-center justify-between mb-2"><span class="text-xs" style="color:var(--muted)">Pipeline Value</span><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--gold-dim);color:var(--gold)"><i class="fa-solid fa-sack-dollar text-xs"></i></div></div>
+        <div class="font-heading font-bold text-2xl">$${(totalVal/1e6).toFixed(1)}M</div>
+        <div class="text-[10px] mt-1" style="color:var(--muted)">Aggregate land value</div>
+      </div>
+      <div class="card p-5 fade-up relative overflow-hidden" style="animation-delay:180ms">
+        <div class="stat-bar" style="background:var(--success)"></div>
+        <div class="flex items-center justify-between mb-2"><span class="text-xs" style="color:var(--muted)">Avg Appeal Score</span><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--success-dim);color:var(--success)"><i class="fa-solid fa-gauge text-xs"></i></div></div>
+        <div class="font-heading font-bold text-2xl">${avgScore}</div>
+        <div class="text-[10px] mt-1" style="color:var(--muted)">Across ${filtered.length} leads</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 card p-5 fade-up" style="animation-delay:200ms">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-heading font-semibold text-sm">Pipeline Stages</h3>
+          <div class="flex gap-4 text-[11px]" style="color:var(--muted)">
+            <span><span class="font-bold" style="color:var(--accent)">${phoneCount}</span> with phone</span>
+            <span><span class="font-bold" style="color:var(--warm)">${oosCount}</span> out-of-state</span>
+          </div>
+        </div>
+        <div class="flex gap-3 items-end h-28">
+          ${[{l:'New',c:filtered.filter(p=>p.status==='New').length,color:'var(--accent)'},{l:'Contacted',c:contactedCount,color:'var(--warm)'},{l:'Interested',c:interestedCount,color:'var(--success)'},{l:'Pass',c:filtered.filter(p=>p.status==='Pass').length,color:'var(--muted)'}].map(s=>{
+            const mx=Math.max(...[filtered.filter(p=>p.status==='New').length,contactedCount,interestedCount,filtered.filter(p=>p.status==='Pass').length],1);
+            return `<div class="flex-1 flex flex-col items-center gap-2"><div class="text-xs font-bold" style="color:var(--fg2)">${s.c}</div><div class="w-full rounded-t-md" style="height:${Math.max(6,s.c/mx*90)}px;background:${s.color};opacity:.8"></div><div class="text-[9px]" style="color:var(--muted)">${s.l}</div></div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="card p-5 fade-up" style="animation-delay:260ms">
+        <h3 class="font-heading font-semibold text-sm mb-3">Top Elite Leads</h3>
+        <div class="space-y-2">
+          ${filtered.filter(p=>p.score>=70).sort((a,b)=>b.score-a.score).slice(0,5).map(p=>`
+            <div class="flex items-center justify-between py-1.5 text-xs cursor-pointer hover:bg-[var(--bg-hover)] px-2 rounded transition-colors" onclick="selectLeadFromTable(${p.id})">
+              <div><div class="font-medium" style="color:var(--fg)">${p.owner.length>20?p.owner.substring(0,20)+'…':p.owner}</div><div style="color:var(--muted)">${p.parcelId}</div></div>
+              <span class="badge badge-danger">${p.score}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+      <div class="card p-5 fade-up" style="animation-delay:300ms">
+        <h3 class="font-heading font-semibold text-sm mb-3">County Distribution</h3>
+        ${COUNTIES.map(c=>{const cnt=filtered.filter(p=>p.county===c).length;const pct=filtered.length?cnt/filtered.length*100:0;return`
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-xs w-24" style="color:var(--fg2)">${c}</span>
+            <div class="flex-1 h-2 rounded-full" style="background:var(--border)"><div class="h-2 rounded-full" style="width:${pct}%;background:var(--accent)"></div></div>
+            <span class="text-xs font-mono w-8 text-right" style="color:var(--muted)">${cnt}</span>
+          </div>`;}).join('')}
+      </div>
+      <div class="card p-5 fade-up" style="animation-delay:340ms">
+        <h3 class="font-heading font-semibold text-sm mb-3">Quick Actions</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <button class="btn-s text-xs" onclick="switchView('map')"><i class="fa-solid fa-map mr-2" style="color:var(--accent)"></i>Open Map</button>
+          <button class="btn-s text-xs" onclick="exportCSV()"><i class="fa-solid fa-file-export mr-2" style="color:var(--gold)"></i>Export CSV</button>
+          <button class="btn-s text-xs" onclick="S.filters.quick='elite';updateFilterUI();switchView('map');toast('Showing elite leads','info')"><i class="fa-solid fa-star mr-2" style="color:var(--danger)"></i>Elite Leads</button>
+          <button class="btn-s text-xs" onclick="S.filters.quick='hasphone';updateFilterUI();switchView('map');toast('Showing leads with phones','info')"><i class="fa-solid fa-phone mr-2" style="color:var(--accent)"></i>Has Phone</button>
+          <button class="btn-s text-xs" onclick="S.filters.quick='strict';updateFilterUI();switchView('map');toast('Showing buyer-criteria fit','info')"><i class="fa-solid fa-circle-check mr-2" style="color:var(--success)"></i>Buyer Fit</button>
+          <button class="btn-s text-xs" onclick="showHelp()"><i class="fa-solid fa-circle-question mr-2"></i>Help Guide</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+let chartInstances=[];
+function renderAnalytics(){
+  chartInstances.forEach(c=>c.destroy());chartInstances=[];
+  const filtered=applyFilters();
+  const el=document.getElementById('view-analytics');
+  el.innerHTML=`
+    <h1 class="font-heading text-xl font-bold mb-5">Analytics</h1>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+      <div class="card p-5"><h3 class="font-heading text-sm font-semibold mb-3">Score Distribution</h3><canvas id="ch-scores" height="220"></canvas></div>
+      <div class="card p-5"><h3 class="font-heading text-sm font-semibold mb-3">Value by County</h3><canvas id="ch-county" height="220"></canvas></div>
+      <div class="card p-5"><h3 class="font-heading text-sm font-semibold mb-3">Owner Type Mix</h3><canvas id="ch-owner" height="220"></canvas></div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="card p-5"><h3 class="font-heading text-sm font-semibold mb-3">Flood Zone Impact</h3><canvas id="ch-flood" height="200"></canvas></div>
+      <div class="card p-5"><h3 class="font-heading text-sm font-semibold mb-3">Frontage vs Score</h3><canvas id="ch-frontage" height="200"></canvas></div>
+    </div>
+  `;
+
+  const baseOpts={responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(30,45,34,.3)'},ticks:{color:'#5e7268',font:{size:10}}},y:{grid:{color:'rgba(30,45,34,.3)'},ticks:{color:'#5e7268',font:{size:10}}}}};
+
+  const bins=[0,0,0,0];
+  filtered.forEach(p=>{if(p.score>=70)bins[0]++;else if(p.score>=50)bins[1]++;else if(p.score>=30)bins[2]++;else bins[3]++;});
+  chartInstances.push(new Chart(document.getElementById('ch-scores'),{type:'bar',data:{labels:['Elite 70+','Strong 50-69','Moderate 30-49','Low <30'],datasets:[{data:bins,backgroundColor:['#ef4444','#e8a832','#d4a64a','#5e7268'],borderRadius:6,barThickness:28}]},options:{...baseOpts,plugins:{legend:{display:false}}}}));
+
+  const cData=COUNTIES.map(c=>filtered.filter(p=>p.county===c).reduce((a,p)=>a+p.landValue,0)/1000);
+  chartInstances.push(new Chart(document.getElementById('ch-county'),{type:'bar',data:{labels:COUNTIES,datasets:[{data:cData,backgroundColor:['#00d4aa','#e8a832','#22c55e','#d4a64a'],borderRadius:6,barThickness:28}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>'$'+v+'K'}}}}}));
+
+  const otData=OWNER_TYPES.map(t=>filtered.filter(p=>p.ownerType===t).length);
+  const otColors=['#00d4aa','#d4a64a','#b66a3d','#ef4444','#e8a832','#22c55e'];
+  chartInstances.push(new Chart(document.getElementById('ch-owner'),{type:'doughnut',data:{labels:OWNER_TYPES,datasets:[{data:otData,backgroundColor:otColors,borderWidth:0,hoverOffset:8}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#5e7268',font:{size:10},padding:10,usePointStyle:true,pointStyle:'circle'}}}}}));
+
+  const fzLabels=['None','X (minimal)','AE (high)'];
+  const fzData=fzLabels.map(l=>{const m=filtered.filter(p=>p.floodZone===l);return m.length?Math.round(m.reduce((a,p)=>a+p.score,0)/m.length):0;});
+  chartInstances.push(new Chart(document.getElementById('ch-flood'),{type:'bar',data:{labels:fzLabels,datasets:[{data:fzData,backgroundColor:['#22c55e','#d4a64a','#ef4444'],borderRadius:6,barThickness:36}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,beginAtZero:true,max:100}}}}));
+
+  const scatter=filtered.filter(p=>p.frontage>0).slice(0,80).map(p=>({x:p.frontage,y:p.score}));
+  chartInstances.push(new Chart(document.getElementById('ch-frontage'),{type:'scatter',data:{datasets:[{data:scatter,backgroundColor:'rgba(0,212,170,.5)',pointRadius:3}]},options:{...baseOpts,scales:{x:{...baseOpts.scales.x,title:{display:true,text:'Frontage (ft)',color:'#5e7268',font:{size:10}}},y:{...baseOpts.scales.y,title:{display:true,text:'Score',color:'#5e7268',font:{size:10}},beginAtZero:true,max:100}}}}));
+}
+
+document.getElementById('county-chips').addEventListener('click',e=>{
+  const chip=e.target.closest('[data-county]');if(!chip) return;
+  const c=chip.dataset.county;
+  const idx=S.filters.counties.indexOf(c);
+  if(idx>=0){S.filters.counties.splice(idx,1);chip.classList.remove('on');}
+  else{S.filters.counties.push(c);chip.classList.add('on');}
+  renderMarkers();updateMapCount();
+});
+
+document.getElementById('owner-chips').addEventListener('click',e=>{
+  const chip=e.target.closest('[data-owner]');if(!chip) return;
+  const t=chip.dataset.owner;
+  const idx=S.filters.ownerTypes.indexOf(t);
+  if(idx>=0){S.filters.ownerTypes.splice(idx,1);chip.classList.remove('on');}
+  else{S.filters.ownerTypes.push(t);chip.classList.add('on');}
+  renderMarkers();updateMapCount();
+});
+
+document.getElementById('quick-chips').addEventListener('click',e=>{
+  const chip=e.target.closest('[data-quick]');if(!chip) return;
+  const q=chip.dataset.quick;
+  if(S.filters.quick===q){S.filters.quick=null;chip.classList.remove('gold-on');}
+  else{
+    document.querySelectorAll('#quick-chips .chip').forEach(c=>c.classList.remove('gold-on'));
+    S.filters.quick=q;chip.classList.add('gold-on');
+  }
+  renderMarkers();updateMapCount();
+});
+
+document.getElementById('view-chips').addEventListener('click',e=>{
+  const chip=e.target.closest('[data-viewf]');if(!chip) return;
+  document.querySelectorAll('#view-chips .chip').forEach(c=>c.classList.remove('on'));
+  S.filters.view=chip.dataset.viewf;chip.classList.add('on');
+  renderMarkers();updateMapCount();
+});
+
+document.getElementById('flood-chips').addEventListener('click',e=>{
+  const chip=e.target.closest('[data-flood]');if(!chip) return;
+  const f=chip.dataset.flood;
+  if(S.filters.flood===f){S.filters.flood=null;chip.classList.remove('on');}
+  else{
+    document.querySelectorAll('#flood-chips .chip').forEach(c=>c.classList.remove('on'));
+    S.filters.flood=f;chip.classList.add('on');
+  }
+  renderMarkers();updateMapCount();
+});
+
+document.getElementById('score-min').addEventListener('input',e=>{
+  S.filters.scoreMin=+e.target.value;
+  document.getElementById('score-val').textContent=e.target.value;
+  renderMarkers();updateMapCount();
+});
+document.getElementById('val-max').addEventListener('input',e=>{
+  S.filters.valMax=+e.target.value;
+  document.getElementById('val-val').textContent=+e.target.value>=200000?'No limit':'$'+(+e.target.value).toLocaleString();
+  renderMarkers();updateMapCount();
+});
+document.getElementById('front-min').addEventListener('input',e=>{
+  S.filters.frontMin=+e.target.value;
+  document.getElementById('front-val').textContent=e.target.value+' ft';
+  renderMarkers();updateMapCount();
+});
+
+['t-locked','t-phone','t-dnc','t-oos','t-absentee','t-mh','t-cluster'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',e=>{
+    const map={'t-locked':'hideLocked','t-phone':'phoneOnly','t-dnc':'hideDnc','t-oos':'oosOnly','t-absentee':'absenteeOnly','t-mh':'mhOnly','t-cluster':'cluster'};
+    S.filters[map[id]]=e.target.checked;
+    if(id==='t-cluster'){renderMarkers();}
+    else{renderMarkers();updateMapCount();}
+  });
+});
+
+document.getElementById('map-mode-2d').addEventListener('click',()=>switchMapMode('2D'));
+document.getElementById('map-mode-3d').addEventListener('click',()=>switchMapMode('3D'));
+
+document.getElementById('global-search').addEventListener('input',e=>{
+  S.filters.search=e.target.value;
+  renderMarkers();updateMapCount();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){
+    e.preventDefault();document.getElementById('global-search').focus();
+  }
+  if(e.key==='?') showHelp();
+  if(e.key==='Escape') closeDetail();
+});
+
+document.getElementById('reset-btn').addEventListener('click',()=>{
+  S.filters={search:'',quick:null,view:'all',counties:[],ownerTypes:[],scoreMin:0,valMax:200000,frontMin:0,flood:null,hideLocked:false,phoneOnly:false,hideDnc:false,oosOnly:false,absenteeOnly:false,mhOnly:false,cluster:true};
+  document.getElementById('score-min').value=0;document.getElementById('score-val').textContent='0';
+  document.getElementById('val-max').value=200000;document.getElementById('val-val').textContent='No limit';
+  document.getElementById('front-min').value=0;document.getElementById('front-val').textContent='0 ft';
+  document.querySelectorAll('.chip').forEach(c=>{c.classList.remove('on');c.classList.remove('gold-on')});
+  document.querySelector('[data-viewf="all"]').classList.add('on');
+  document.querySelectorAll('.toggle input').forEach(i=>i.checked=false);
+  document.getElementById('t-cluster').checked=true;
+  document.getElementById('global-search').value='';
+  renderMarkers();updateMapCount();
+  toast('Filters reset','info');
+});
+
+function updateFilterUI(){
+  document.querySelectorAll('#quick-chips .chip').forEach(c=>{
+    c.classList.toggle('gold-on',c.dataset.quick===S.filters.quick);
+  });
+}
+
+function updateMapCount(){
+  const n=applyFilters().length;
+  document.getElementById('map-count').textContent=n+' leads shown';
+}
+
+function exportCSV(){
+  const filtered=sortLeads(applyFilters());
+  const headers=['ParcelID','Owner','OwnerType','County','Address','City','State','MailState','Acreage','Zoning','Frontage','FloodZone','LandValue','Score','Phone','DNC','OutOfState','Absentee','YearsOwned','MultiParcel','Status','Favorite'];
+  const rows=filtered.map(p=>[p.parcelId,p.owner,p.ownerType,p.county,p.address,p.city,p.state,p.mailState,p.acreage,p.zoning,p.frontage,p.floodZone,p.landValue,p.score,p.phone||'',p.isDNC,p.isOOS,p.isAbsentee,p.yrsOwned,p.multiParcel,p.status,p.favorite?'Yes':'No']);
+  let csv=headers.join(',')+'\n'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='urthmapper-leads-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();toast(`Exported ${filtered.length} leads`,'success');
+}
+document.getElementById('export-btn').addEventListener('click',exportCSV);
+
+document.getElementById('share-btn').addEventListener('click',()=>{
+  const params=new URLSearchParams();
+  const f=S.filters;
+  if(f.search) params.set('q',f.search);
+  if(f.quick) params.set('quick',f.quick);
+  if(f.scoreMin) params.set('score',f.scoreMin);
+  if(f.valMax<200000) params.set('maxval',f.valMax);
+  if(f.frontMin) params.set('front',f.frontMin);
+  if(f.counties.length) params.set('counties',f.counties.join(','));
+  const url=location.origin+location.pathname+(params.toString()?'?'+params.toString():'');
+  navigator.clipboard.writeText(url).then(()=>toast('Share URL copied','success')).catch(()=>toast('Could not copy URL','error'));
+});
+
+(function loadShareParams(){
+  const p=new URLSearchParams(location.search);
+  if(p.has('q')){S.filters.search=p.get('q');document.getElementById('global-search').value=p.get('q');}
+  if(p.has('quick')){S.filters.quick=p.get('quick');}
+  if(p.has('score')){S.filters.scoreMin=+p.get('score');document.getElementById('score-min').value=S.filters.scoreMin;document.getElementById('score-val').textContent=S.filters.scoreMin;}
+  if(p.has('maxval')){S.filters.valMax=+p.get('maxval');document.getElementById('val-max').value=S.filters.valMax;document.getElementById('val-val').textContent='$'+S.filters.valMax.toLocaleString();}
+  if(p.has('front')){S.filters.frontMin=+p.get('front');document.getElementById('front-min').value=S.filters.frontMin;document.getElementById('front-val').textContent=S.filters.frontMin+' ft';}
+  if(p.has('counties')){S.filters.counties=p.get('counties').split(',');}
+})();
+
+function showHelp(){
+  document.getElementById('modal-root').innerHTML=`
+    <div class="modal-ov" id="help-ov">
+      <div class="modal-c" style="max-width:600px">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-heading font-bold text-lg">How to Use Lead Console</h3>
+          <button onclick="document.getElementById('modal-root').innerHTML=''" class="btn-ghost px-2"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="space-y-4 text-sm" style="color:var(--fg2)">
+          <div><span class="font-heading font-bold" style="color:var(--accent)">01</span> <strong style="color:var(--fg)">Map & Pins</strong><p class="mt-1">Every colored pin is a lead — color shows appeal score (red=elite, orange=strong, yellow=moderate, grey=low). Grey pins are locked inventory. Toggle Satellite/Street in the map top-right.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--accent)">02</span> <strong style="color:var(--fg)">Click Any Pin</strong><p class="mt-1">Full lead detail: owner, phone with click-to-call, mailing address, acreage, zoning, frontage, flood, value, and scoring breakdown. Mark as favorite or set status.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--accent)">03</span> <strong style="color:var(--fg)">Filter the List</strong><p class="mt-1">Left panel: quick filters, county, owner type, score/value/frontage sliders, flood zone, toggles for phone/DNC/out-of-state/absentee.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--accent)">04</span> <strong style="color:var(--fg)">Export & Share</strong><p class="mt-1">Export CSV downloads the filtered set. Share copies a URL with your current filters encoded.</p></div>
+        </div>
+        <div class="mt-4 text-[11px]" style="color:var(--muted)">Pro tips: Press <kbd>/</kbd> to search · Press <kbd>?</kbd> for this help</div>
+        <div class="flex justify-end mt-5"><button class="btn-p" onclick="document.getElementById('modal-root').innerHTML=''">Got it</button></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('help-ov').addEventListener('click',e=>{if(e.target.id==='help-ov')document.getElementById('modal-root').innerHTML='';});
+}
+document.getElementById('help-btn').addEventListener('click',showHelp);
+
+function updateClock(){
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateClock,1000);updateClock();
+
+window.addEventListener('load',async ()=>{
+  await loadRealLeads();
+  initMap();
+  updateFilterUI();
+  setTimeout(()=>{
+    document.getElementById('loader').style.opacity='0';
+    document.getElementById('app').style.opacity='1';
+    setTimeout(()=>document.getElementById('loader').remove(),500);
+    if(!localStorage.getItem('sg-seen')){
+      setTimeout(showHelp,800);
+      localStorage.setItem('sg-seen','1');
+    }
+  },600);
+});
+</script>
+</body>
+</html>
