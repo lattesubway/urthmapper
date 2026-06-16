@@ -91,6 +91,78 @@ function scoreLead(lead) {
     breakdown.push('Tax delinquency (-8)');
   }
 
+  if (lead.pricePerAcre && lead.pricePerAcre <= 10000) {
+    score += 10;
+    breakdown.push('Under $10K/acre (+10)');
+  } else if (lead.pricePerAcre && lead.pricePerAcre <= 15000) {
+    score += 6;
+    breakdown.push('Under $15K/acre (+6)');
+  } else if (lead.pricePerAcre && lead.pricePerAcre <= 25000) {
+    score += 3;
+    breakdown.push('Under $25K/acre (+3)');
+  }
+
+  if (lead.estSubdivisionLots >= 3) {
+    score += 10;
+    breakdown.push(`${lead.estSubdivisionLots} subdivision lots (+10)`);
+  } else if (lead.estSubdivisionLots >= 2) {
+    score += 6;
+    breakdown.push(`${lead.estSubdivisionLots} subdivision lots (+6)`);
+  }
+
+  if (lead.isPortfolioOwner && lead.ownerParcelCount >= 3) {
+    score += 8;
+    breakdown.push(`Portfolio owner (${lead.ownerParcelCount} parcels) (+8)`);
+  } else if (lead.isPortfolioOwner) {
+    score += 4;
+    breakdown.push('Multi-parcel owner (+4)');
+  }
+
+  if (lead.sewerAvailable && lead.sewerType === 'public') {
+    score += 10;
+    breakdown.push('Public sewer (+10)');
+  } else if (lead.sewerAvailable) {
+    score += 5;
+    breakdown.push('Sewer on file (+5)');
+  } else if (lead.sewerType === 'septic-likely') {
+    breakdown.push('Septic likely (no sewer)');
+  }
+
+  if (lead.waterAvailable && lead.waterType === 'public') {
+    score += 4;
+    breakdown.push('Public water (+4)');
+  }
+
+  if (lead.nearestRoad) {
+    score += 4;
+    breakdown.push(`Road: ${lead.nearestRoad} (+4)`);
+  }
+
+  if (lead.distToHighwayMi != null && lead.distToHighwayMi <= 5) {
+    score += 5;
+    breakdown.push(`Near ${lead.highwayName || 'highway'} (${lead.distToHighwayMi} mi) (+5)`);
+  }
+
+  if (lead.developmentPotential === 'High') {
+    score += 6;
+    breakdown.push('High development potential (+6)');
+  }
+
+  if (lead.hasWetlandsNearby) {
+    score -= 6;
+    breakdown.push('Wetlands nearby (-6)');
+  }
+
+  if (lead.legalAccess === 'Unknown' && !lead.nearestRoad) {
+    score -= 5;
+    breakdown.push('Road access unverified (-5)');
+  }
+
+  if (lead.equityVsSalePct != null && lead.equityVsSalePct >= 50) {
+    score += 5;
+    breakdown.push('Strong equity vs last sale (+5)');
+  }
+
   return {
     score: Math.max(0, Math.min(100, Math.round(score))),
     breakdown

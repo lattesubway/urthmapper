@@ -1,6 +1,8 @@
 const { sleep } = require('./arcgis-client');
 const { getWaterFeatures: getWaterFeaturesDetailed } = require('./water-features');
 const { createSkiptraceProvider } = require('./skiptrace');
+const { resolveUtilityProviders } = require('./county-utilities');
+const { refineFrontage } = require('./frontage');
 
 function ringCentroid(ring) {
   if (!Array.isArray(ring) || !ring.length) return null;
@@ -114,7 +116,11 @@ async function enrichParcel(parcel, { skiptrace = null, enrichFlood = true, enri
 
   if (!parcel.frontage && parcel.geometry) {
     parcel.frontage = estimateFrontageFromGeometry(parcel.geometry);
+    parcel.frontageSource = 'geometry-estimate';
   }
+  const frontageRefined = refineFrontage(parcel);
+  parcel.frontage = frontageRefined.frontage;
+  parcel.frontageSource = frontageRefined.frontageSource;
 
   const signals = ownerSignals(parcel);
   const yrsOwned = yearsOwned(parcel.saleDate);
@@ -156,9 +162,8 @@ async function enrichParcel(parcel, { skiptrace = null, enrichFlood = true, enri
     }
   }
 
-  const utilities = parcel.utilities?.length
-    ? parcel.utilities
-    : inferUtilities(parcel);
+  const utilityData = resolveUtilityProviders(parcel);
+  const utilities = utilityData.utilities;
 
   return {
     ...parcel,
@@ -174,19 +179,21 @@ async function enrichParcel(parcel, { skiptrace = null, enrichFlood = true, enri
     email,
     skiptraceSource,
     utilities,
-    hasUtilities: utilities.length > 0,
+    waterProvider: utilityData.waterProvider,
+    sewerProvider: utilityData.sewerProvider,
+    electricProvider: utilityData.electricProvider,
+    utilitySource: utilityData.utilitySource,
+    sewerType: utilityData.sewerType,
+    waterType: utilityData.waterType,
+    sewerAvailable: utilityData.sewerAvailable,
+    waterAvailable: utilityData.waterAvailable,
+    electricAvailable: utilityData.electricAvailable,
+    hasUtilities: utilityData.hasUtilities,
+    frontageSource: parcel.frontageSource,
     isDNC: false,
     multiParcel: 1,
     roadAccess: parcel.frontage >= 100 ? 'Excellent' : parcel.frontage >= 50 ? 'Good' : parcel.frontage > 0 ? 'Fair' : 'Unknown'
   };
-}
-
-function inferUtilities(parcel) {
-  const city = (parcel.situsAddress?.city || '').toUpperCase();
-  const urban = ['CLEARWATER', 'LARGO', 'DUNEDIN', 'TAMPA', 'BRADENTON', 'SARASOTA', 'NEW PORT RICHEY'].includes(city);
-  if (urban && parcel.acreage < 5) return ['water', 'electric'];
-  if (parcel.acreage < 2) return ['electric'];
-  return [];
 }
 
 module.exports = {

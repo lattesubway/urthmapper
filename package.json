@@ -7,6 +7,7 @@
     "scrape": "node scrape-leads.js",
     "scrape:export": "node scrape-leads.js --export-app",
     "enrich:water": "node enrich-water.js --export-app",
+    "enrich:investor": "node enrich-investor.js --export-app",
     "skiptrace": "node skiptrace-leads.js --export-app",
     "serve": "npx serve -l 8888 ."
   },

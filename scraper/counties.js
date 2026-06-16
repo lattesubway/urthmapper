@@ -191,6 +191,7 @@ const COUNTY_SOURCES = {
         marketValue: Number(a.VAL_APPR) || Number(a.VAL_LAND) || 0,
         zoning: a.DIR_CLASS || 'Unknown',
         dorCode: a.DIR_CLASS || '',
+        landUseCode: a.DIR_CLASS || '',
         landUseDescription: a.SUBSIDENCE_CODE || '',
         frontage: Number(a['shape.STLength()']) ? Math.round(Number(a['shape.STLength()']) / 4) : 0,
         saleDate: a.SALE_YEAR ? new Date(a.SALE_YEAR, (a.SALE_MON || 1) - 1, a.SALE_DAY || 1).toISOString() : null,
@@ -257,6 +258,9 @@ const COUNTY_SOURCES = {
         saleDate: a.SALE_DATE_LQ || a.SALE_DATE_LAST || null,
         salePrice: Number(a.SALE_PRICE_LQ || a.SALE_PRICE_LAST) || null,
         utilities,
+        sewerProvider: a.NAV_SEWER_NAME || null,
+        waterProvider: a.NAV_WATER_NAME || null,
+        electricProvider: a.NAV_LIGHT_NAME || null,
         geometry: feature.geometry,
         sourceLayer: 'manatee-parcel-search'
       };

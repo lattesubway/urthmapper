@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#080d0b">
+<meta name="theme-color" content="#0b0d14">
 <title>Urthmapper — Land Lead Console</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config={theme:{extend:{fontFamily:{heading:['Space Grotesk','sans-serif'],body:['Inter','sans-serif'],mono:['Geist Mono','monospace']}}}}
+tailwind.config={theme:{extend:{fontFamily:{heading:['Syne','sans-serif'],body:['DM Sans','sans-serif'],mono:['IBM Plex Mono','monospace']}}}}
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -21,20 +21,38 @@ tailwind.config={theme:{extend:{fontFamily:{heading:['Space Grotesk','sans-serif
 <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.157/Build/Cesium/Widgets/widgets.css">
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.157/Build/Cesium/Cesium.js"></script>
 <script src="leads-data.js"></script>
+<!-- Optional: embedded Google Street View in POV panel -->
+<!-- <script>window.GOOGLE_MAPS_KEY='YOUR_API_KEY';</script> -->
 <style>
 :root{
-  --bg:#080d0b;--bg-card:#0f1613;--bg-el:#162019;--bg-hover:#1c2b23;
-  --fg:#e2ebe5;--fg2:#a3b5aa;--muted:#5e7268;
-  --accent:#00d4aa;--accent-dim:rgba(0,212,170,.1);--accent-glow:rgba(0,212,170,.25);
-  --gold:#d4a64a;--gold-dim:rgba(212,166,74,.12);--gold2:#b66a3d;
-  --danger:#ef4444;--danger-dim:rgba(239,68,68,.12);
-  --success:#22c55e;--success-dim:rgba(34,197,94,.12);
-  --warm:#e8a832;--warm-dim:rgba(232,168,50,.12);
-  --border:#1a2d22;--border-lt:#243830;
+  --bg:#0b0d14;--bg-card:rgba(17,19,30,.88);--bg-el:#1c1f2e;--bg-hover:#262a3d;
+  --fg:#ede8df;--fg2:#9d99ad;--muted:#646078;
+  --accent:#d96847;--accent-dim:rgba(217,104,71,.14);--accent-glow:rgba(217,104,71,.38);
+  --gold:#c9a227;--gold-dim:rgba(201,162,39,.14);--gold2:#9e4b2f;
+  --danger:#f25f5c;--danger-dim:rgba(242,95,92,.14);
+  --success:#5da87a;--success-dim:rgba(93,168,122,.14);
+  --warm:#e8954f;--warm-dim:rgba(232,149,79,.14);
+  --info:#6eb5d4;--info-dim:rgba(110,181,212,.14);
+  --parcel:#2ec4b6;--parcel-dim:rgba(46,196,182,.14);--parcel-glow:rgba(46,196,182,.72);
+  --border:rgba(42,40,58,.92);--border-lt:rgba(62,58,82,.95);
+  --surface-overlay:rgba(14,16,26,.9);--shadow-glow:rgba(217,104,71,.22);
+  --glass:blur(14px) saturate(1.15);
+  --radius:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--fg);font-family:'Inter',sans-serif;overflow:hidden}
-h1,h2,h3,h4,h5,h6{font-family:'Space Grotesk',sans-serif}
+body{background:var(--bg);color:var(--fg);font-family:'DM Sans',sans-serif;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 15% -10%,rgba(217,104,71,.09),transparent 55%),
+    radial-gradient(ellipse 55% 45% at 92% 8%,rgba(110,181,212,.07),transparent 50%),
+    radial-gradient(ellipse 40% 30% at 50% 100%,rgba(158,75,47,.06),transparent 55%),
+    linear-gradient(rgba(110,181,212,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(110,181,212,.025) 1px,transparent 1px);
+  background-size:auto,auto,auto,52px 52px,52px 52px;opacity:.95}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;letter-spacing:-.02em}
+#app{position:relative;z-index:1}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg-card)}
 ::-webkit-scrollbar-thumb{background:var(--border-lt);border-radius:3px}
@@ -48,8 +66,9 @@ h1,h2,h3,h4,h5,h6{font-family:'Space Grotesk',sans-serif}
 .fade-in{animation:fadeIn .3s ease both}
 .slide-r{animation:slideR .3s ease both}
 
-.card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;transition:all .2s}
-.card:hover{border-color:var(--border-lt)}
+.card{background:var(--bg-card);backdrop-filter:var(--glass);border:1px solid var(--border);border-radius:var(--radius);transition:transform .2s,border-color .2s,box-shadow .2s}
+.card:hover{border-color:var(--border-lt);box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.glass{background:var(--bg-card);backdrop-filter:var(--glass);border:1px solid var(--border)}
 
 .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
 .badge-accent{background:var(--accent-dim);color:var(--accent)}
@@ -57,7 +76,8 @@ h1,h2,h3,h4,h5,h6{font-family:'Space Grotesk',sans-serif}
 .badge-danger{background:var(--danger-dim);color:var(--danger)}
 .badge-success{background:var(--success-dim);color:var(--success)}
 .badge-warm{background:var(--warm-dim);color:var(--warm)}
-.badge-muted{background:rgba(94,114,104,.12);color:var(--muted)}
+.badge-muted{background:rgba(100,96,120,.14);color:var(--muted)}
+.badge-info{background:var(--info-dim);color:var(--info)}
 
 .btn-p{background:var(--accent);color:var(--bg);font-weight:700;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;transition:all .15s;font-size:13px;font-family:inherit}
 .btn-p:hover{filter:brightness(1.1);transform:translateY(-1px)}
@@ -90,7 +110,7 @@ select.ipt{cursor:pointer}select.ipt option{background:var(--bg-card)}
 .leaflet-container{background:var(--bg)!important}
 .leaflet-control-zoom a{background:var(--bg-card)!important;color:var(--fg2)!important;border-color:var(--border)!important}
 .leaflet-control-zoom a:hover{background:var(--bg-el)!important;color:var(--fg)!important}
-.leaflet-control-attribution{background:rgba(8,13,11,.7)!important;color:var(--muted)!important;font-size:9px!important}
+.leaflet-control-attribution{background:var(--surface-overlay)!important;color:var(--muted)!important;font-size:9px!important}
 .leaflet-control-attribution a{color:var(--accent)!important}
 .leaflet-popup-content-wrapper{background:var(--bg-card)!important;color:var(--fg)!important;border-radius:12px!important;border:1px solid var(--border)!important;box-shadow:0 8px 32px rgba(0,0,0,.5)!important}
 .leaflet-popup-tip{background:var(--bg-card)!important}
@@ -99,32 +119,86 @@ select.ipt{cursor:pointer}select.ipt option{background:var(--bg-card)}
 
 #cesiumContainer{position:absolute;inset:0;z-index:1;display:none}
 .mode-btn{background:transparent;color:var(--muted);border:1px solid transparent;border-radius:999px;padding:.45rem .75rem;cursor:pointer;transition:all .15s;font-size:10px}
-.mode-btn.active{background:rgba(0,212,170,.14);color:var(--accent);border-color:rgba(0,212,170,.35)}
+.mode-btn.active{background:var(--accent-dim);color:var(--accent);border-color:rgba(217,104,71,.4)}
 .mode-btn:hover{color:var(--fg);border-color:var(--border-lt)}
 
 .custom-marker{border-radius:50%;border:2px solid rgba(255,255,255,.3);transition:transform .15s}
 .custom-marker:hover{transform:scale(1.3);z-index:9999!important}
 
-.score-elite{background:var(--danger);box-shadow:0 0 10px rgba(239,68,68,.4)}
-.score-strong{background:var(--warm);box-shadow:0 0 8px rgba(232,168,50,.3)}
-.score-moderate{background:var(--gold);box-shadow:0 0 6px rgba(212,166,74,.3)}
+.score-elite{background:var(--danger);box-shadow:0 0 10px rgba(242,95,92,.45)}
+.score-strong{background:var(--warm);box-shadow:0 0 8px rgba(232,149,79,.35)}
+.score-moderate{background:var(--gold);box-shadow:0 0 6px rgba(201,162,39,.35)}
 .score-low{background:var(--muted);box-shadow:none}
-.score-locked{background:#3a3a3a;border-color:#555;opacity:.6}
+.score-locked{background:var(--bg-hover);border-color:var(--border-lt);opacity:.55}
 
-.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(0,212,170,.2)!important}
-.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(0,212,170,.5)!important;color:var(--bg)!important;font-weight:700;font-family:'Space Grotesk',sans-serif}
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(217,104,71,.18)!important}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(217,104,71,.55)!important;color:var(--fg)!important;font-weight:700;font-family:'Syne',sans-serif}
+
+.lead-popup .leaflet-popup-content{margin:10px 12px;line-height:1.4}
+.lead-popup .leaflet-popup-content-wrapper{border-radius:12px!important}
+
+.parcel-hover-glow{filter:drop-shadow(0 0 10px var(--parcel-glow))}
+.pov-panel{position:absolute;bottom:52px;left:12px;width:min(380px,calc(100% - 24px));z-index:1001;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-lt);box-shadow:0 16px 48px rgba(0,0,0,.45);opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .25s,transform .25s}
+.pov-panel.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+.pov-panel-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-card);border-bottom:1px solid var(--border);font-size:10px}
+.pov-viewer-wrap{position:relative;height:200px;background:var(--bg)}
+#pov-cesium,#pov-streetview{position:absolute;inset:0;width:100%;height:100%}
+#pov-streetview{border:none;display:none}
+#pov-streetview.active{display:block}
+#pov-cesium.hidden{display:none}
+.pov-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,13,20,.8);font-size:11px;color:var(--muted);z-index:2}
+.pov-loading.off{display:none}
 
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:8000;animation:fadeIn .2s ease}
 .modal-c{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:92%;animation:fadeUp .3s ease;max-height:85vh;overflow-y:auto}
 
-.lead-card{padding:12px;border-radius:10px;cursor:pointer;transition:all .15s;border:1px solid transparent}
-.lead-card:hover{background:var(--bg-hover);border-color:var(--border-lt)}
-.lead-card.selected{background:var(--bg-el);border-color:var(--accent)}
+.lead-card{padding:12px;border-radius:10px;cursor:pointer;transition:all .18s;border:1px solid transparent}
+.lead-card:hover{background:var(--bg-hover);border-color:var(--border-lt);transform:translateX(2px)}
+.lead-card.selected{background:var(--bg-el);border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+
+.map-drawer{position:absolute;top:56px;right:12px;bottom:52px;width:300px;z-index:1000;display:flex;flex-direction:column;border-radius:var(--radius);overflow:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .25s}
+.map-drawer.collapsed{transform:translateX(calc(100% + 20px));opacity:0;pointer-events:none}
+.drawer-item{padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s,padding-left .15s}
+.drawer-item:hover{background:var(--bg-hover);padding-left:16px}
+.drawer-item.active{background:var(--accent-dim);border-left:3px solid var(--accent)}
+
+.score-ring{width:52px;height:52px;transform:rotate(-90deg)}
+.score-ring circle{fill:none;stroke-width:3}
+.score-ring .track{stroke:var(--border)}
+.score-ring .fill{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+
+.detail-tabs{display:flex;gap:4px;margin-bottom:14px;padding:4px;background:var(--bg-el);border-radius:10px}
+.tab-btn{flex:1;padding:6px 8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:inherit}
+.tab-btn.active{background:var(--accent-dim);color:var(--accent)}
+.tab-pane{display:none;animation:fadeUp .25s ease}
+.tab-pane.active{display:block}
+
+.util-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:600;border:1px solid var(--border)}
+.util-pill.on{background:var(--success-dim);color:var(--success);border-color:rgba(93,168,122,.3)}
+.util-pill.off{background:transparent;color:var(--muted)}
+
+.cmd-palette{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:9500;display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;animation:fadeIn .15s}
+.cmd-box{width:min(520px,92vw);background:var(--bg-el);border:1px solid var(--border-lt);border-radius:16px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.cmd-input{width:100%;padding:16px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--fg);font-size:15px;outline:none;font-family:inherit}
+.cmd-results{max-height:320px;overflow-y:auto;padding:8px}
+.cmd-item{padding:10px 14px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg2);transition:background .1s}
+.cmd-item:hover,.cmd-item.sel{background:var(--bg-hover);color:var(--fg)}
+.cmd-kbd{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--border);color:var(--muted)}
+
+.lead-row-active{background:var(--accent-dim)!important;outline:1px solid rgba(217,104,71,.25)}
+.table-sticky thead{position:sticky;top:0;z-index:2;background:var(--bg-card);backdrop-filter:var(--glass)}
+
+@keyframes markerPulse{0%,100%{box-shadow:0 0 0 0 var(--accent-glow)}50%{box-shadow:0 0 0 8px transparent}}
+.custom-marker.selected-marker{animation:markerPulse 1.5s ease infinite;border-color:var(--accent)!important;transform:scale(1.4)!important}
+
+.filter-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--accent);color:var(--bg);font-size:9px;font-weight:800}
+
+.nav-pill{padding:2px 8px;border-radius:99px;background:var(--accent-dim);color:var(--accent);font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace}
 
 .filter-block{margin-bottom:16px}
 .filter-label{display:block;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.slider-val{font-family:'Geist Mono',monospace;font-size:12px;color:var(--accent);font-weight:500}
+.slider-val{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);font-weight:500}
 input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border);border-radius:2px;outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
 .toggle{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;color:var(--fg2);cursor:pointer;transition:color .15s}
@@ -135,22 +209,29 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 @media(max-width:1024px){
   .sidebar{display:none!important}
   .lead-panel{display:none!important}
+  .map-drawer{width:calc(100% - 24px);right:12px}
 }
 </style>
 </head>
 <body>
 
 <div id="loader" style="position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s">
-  <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite"></div>
-  <p style="margin-top:14px;color:var(--muted);font-size:12px;letter-spacing:1.5px;font-family:'Space Grotesk'">URTHMAPPER</p>
+  <div style="width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--gold2));box-shadow:0 0 40px var(--shadow-glow)">
+    <i class="fa-solid fa-layer-group" style="color:var(--bg);font-size:18px"></i>
+  </div>
+  <p style="margin-top:18px;color:var(--fg);font-size:15px;letter-spacing:.5px;font-family:'Syne';font-weight:700">Urthmapper</p>
+  <p style="margin-top:6px;color:var(--muted);font-size:11px">Loading parcel intelligence…</p>
+  <div style="width:120px;height:3px;background:var(--border);border-radius:99px;margin-top:16px;overflow:hidden">
+    <div id="loader-bar" style="height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--info));border-radius:99px;transition:width .3s"></div>
+  </div>
 </div>
 
 <div id="app" class="h-screen flex flex-col" style="opacity:0;transition:opacity .4s">
 
-<nav class="h-12 flex items-center justify-between px-4 shrink-0" style="border-bottom:1px solid var(--border);background:var(--bg-card)">
+<nav class="h-12 flex items-center justify-between px-4 shrink-0 glass" style="border-bottom:1px solid var(--border)">
   <div class="flex items-center gap-5">
     <div class="flex items-center gap-2">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,var(--gold),var(--gold2))">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,var(--accent),var(--gold2))">
         <i class="fa-solid fa-check text-[10px]" style="color:var(--bg)"></i>
       </div>
       <div class="leading-none">
@@ -172,13 +253,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     </div>
     <button class="btn-ghost" id="export-btn" title="Export CSV"><i class="fa-solid fa-file-export text-xs"></i><span class="hidden sm:inline">Export</span></button>
     <button class="btn-ghost" id="share-btn" title="Share current view"><i class="fa-solid fa-share-nodes text-xs"></i><span class="hidden sm:inline">Share</span></button>
+    <button class="btn-ghost" id="cmd-btn" title="Command palette (⌘K)"><i class="fa-solid fa-terminal text-xs"></i></button>
+    <span class="nav-pill hidden sm:inline" id="nav-lead-count">—</span>
     <button class="btn-ghost" id="help-btn" title="Help (?)"><i class="fa-solid fa-circle-question text-xs"></i></button>
   </div>
 </nav>
 
 <div class="flex-1 flex overflow-hidden">
 
-<aside id="filter-sidebar" class="sidebar shrink-0 overflow-y-auto p-4" style="width:240px;border-right:1px solid var(--border);background:var(--bg-card)">
+<aside id="filter-sidebar" class="sidebar shrink-0 overflow-y-auto p-4 glass" style="width:252px;border-right:1px solid var(--border)">
+  <div class="flex items-center justify-between mb-4">
+    <span class="filter-label" style="margin:0">Filters</span>
+    <span class="filter-count" id="filter-active-count" title="Active filters">0</span>
+  </div>
   <div class="filter-block">
     <label class="filter-label">Quick filters</label>
     <div class="flex flex-wrap gap-1.5" id="quick-chips">
@@ -261,23 +348,54 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 
 <div id="view-map" class="view-panel flex-1 relative">
   <div id="map" class="w-full h-full"></div>
-  <div class="absolute top-3 left-3 z-[1000] flex items-center gap-2 rounded-lg bg-[rgba(15,22,19,.85)] border border-[var(--border)] p-2 text-[10px]">
+  <div class="absolute top-3 left-3 z-[1000] flex items-center gap-2 rounded-lg border border-[var(--border)] p-2 text-[10px]" style="background:var(--surface-overlay)">
     <button id="map-mode-2d" class="mode-btn active" type="button">2D</button>
     <button id="map-mode-3d" class="mode-btn" type="button">3D</button>
+    <button id="pov-toggle" class="mode-btn active" type="button" title="Earth POV on hover"><i class="fa-solid fa-street-view mr-1"></i>POV</button>
+  </div>
+  <div id="pov-panel" class="pov-panel glass">
+    <div class="pov-panel-header">
+      <div class="min-w-0">
+        <div class="font-heading font-bold text-xs truncate" id="pov-title">Earth POV</div>
+        <div class="text-[9px] truncate" style="color:var(--muted)" id="pov-sub">Hover a lead</div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <a id="pov-earth-link" href="#" target="_blank" rel="noopener" class="btn-ghost px-2 py-1" title="Open in Google Earth"><i class="fa-solid fa-globe text-xs"></i></a>
+        <a id="pov-street-link" href="#" target="_blank" rel="noopener" class="btn-ghost px-2 py-1" title="Open Street View"><i class="fa-solid fa-person-walking text-xs"></i></a>
+      </div>
+    </div>
+    <div class="pov-viewer-wrap">
+      <div class="pov-loading" id="pov-loading">Loading parcel view…</div>
+      <div id="pov-cesium"></div>
+      <iframe id="pov-streetview" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
   </div>
   <div id="cesiumContainer" class="w-full h-full hidden"></div>
-  <div class="absolute bottom-3 left-3 flex items-center gap-3 text-[10px] z-[1000] px-3 py-1.5 rounded-lg" style="background:rgba(15,22,19,.85);border:1px solid var(--border);color:var(--muted)">
+  <div class="absolute bottom-3 left-3 flex items-center gap-3 text-[10px] z-[1000] px-3 py-1.5 rounded-lg" style="background:var(--surface-overlay);border:1px solid var(--border);color:var(--muted)">
     <span id="map-count">—</span>
     <span id="map-coords"></span>
   </div>
-  <div class="absolute top-3 right-3 z-[1000] p-3 rounded-xl text-[10px]" style="background:rgba(15,22,19,.85);border:1px solid var(--border)">
+  <div id="map-lead-drawer" class="map-drawer glass">
+    <div class="flex items-center justify-between px-3 py-2.5 shrink-0" style="border-bottom:1px solid var(--border)">
+      <div>
+        <div class="font-heading font-bold text-xs">Lead Stack</div>
+        <div class="text-[10px]" style="color:var(--muted)" id="drawer-count">—</div>
+      </div>
+      <button class="btn-ghost px-2" id="drawer-toggle" title="Toggle drawer"><i class="fa-solid fa-panel-fire text-xs"></i></button>
+    </div>
+    <div class="px-3 py-2 shrink-0" style="border-bottom:1px solid var(--border)">
+      <input id="drawer-search" type="search" placeholder="Filter stack…" class="ipt text-xs py-1.5" autocomplete="off">
+    </div>
+    <div id="drawer-list" class="flex-1 overflow-y-auto"></div>
+  </div>
+  <div class="absolute top-3 z-[1000] p-3 rounded-xl text-[10px] glass hidden xl:block transition-all duration-300" style="right:320px" id="score-legend">
     <div class="font-heading font-bold text-[9px] uppercase tracking-wider mb-2" style="color:var(--muted)">Appeal Score</div>
     <div class="flex flex-col gap-1.5">
       <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--danger)"></span>70+ Elite</div>
       <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--warm)"></span>50–69 Strong</div>
       <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--gold)"></span>30–49 Moderate</div>
       <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--muted)"></span>&lt;30 Low</div>
-      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:#3a3a3a"></span>Locked</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--bg-hover)"></span>Locked</div>
     </div>
   </div>
 </div>
@@ -288,7 +406,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 
 <div id="view-analytics" class="view-panel flex-1 overflow-y-auto p-6 hidden"></div>
 
-<aside id="detail-panel" class="lead-panel shrink-0 overflow-y-auto hidden" style="width:340px;border-left:1px solid var(--border);background:var(--bg-card)">
+<aside id="detail-panel" class="lead-panel shrink-0 overflow-y-auto hidden glass" style="width:380px;border-left:1px solid var(--border)">
   <div id="detail-content" class="p-5"></div>
 </aside>
 
@@ -306,12 +424,22 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 
 <script>
 let _s=42; function sr(){_s=(_s*16807)%2147483647;return(_s-1)/2147483646}
+function pal(k){return getComputedStyle(document.documentElement).getPropertyValue('--'+k).trim()}
+function scoreHex(p){
+  if(p.isLocked) return pal('muted');
+  if(p.score>=70) return pal('danger');
+  if(p.score>=50) return pal('warm');
+  if(p.score>=30) return pal('gold');
+  return pal('muted');
+}
 
 const COUNTIES=['Pinellas','Hillsborough','Pasco','Manatee','Sarasota'];
 const PARCEL_BOUNDARY_SERVICES={
-  Pinellas:{
-    queryUrl:'https://egis.pinellas.gov/gis/rest/services/AGO/Parcels/MapServer/0/query'
-  }
+  Pinellas:{queryUrl:'https://egis.pinellas.gov/gis/rest/services/PublicWebGIS/Parcels/MapServer/1/query'},
+  Hillsborough:{queryUrl:'https://maps.hillsboroughcounty.org/arcgis/rest/services/InfoLayers/HC_Parcels/MapServer/0/query'},
+  Pasco:{queryUrl:'https://maps.pascopa.com/arcgis/rest/services/Parcels/MapServer/3/query'},
+  Manatee:{queryUrl:'https://gis.manateepao.com/arcgis/rest/services/Website/WebLayers/MapServer/0/query'},
+  Sarasota:{queryUrl:'https://services3.arcgis.com/icrWMv7eBkctFu1f/arcgis/rest/services/ParcelHosted/FeatureServer/0/query'}
 };
 const OWNER_TYPES=['Individual','LLC','Trust','Estate','Heirs','Corporate'];
 const STATUSES=['New','Contacted','Interested','Pass'];
@@ -323,6 +451,7 @@ const FIRST_NAMES=['James','Mary','Robert','Patricia','John','Jennifer','Michael
 const LAST_NAMES=['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Sanchez','Clark','Lewis','Robinson','Walker'];
 
 let prospects = [];
+const geometryCache = {};
 
 async function loadRealLeads(){
   const loaded = [];
@@ -349,7 +478,6 @@ async function loadRealLeads(){
   prospects = loaded;
   loadSaved();
   buildLeadFilters();
-  await loadParcelBoundaries(prospects);
 
   if(prospects.length === 0){
     showNoDataBanner();
@@ -380,21 +508,14 @@ async function fetchParcelBoundary(lead){
     if(Array.isArray(geojson.features)&&geojson.features.length){
       const feature=geojson.features[0];
       lead.geometry=feature.geometry;
-      lead.boundarySource='pinellas-geojson';
+      lead.boundarySource=lead.county.toLowerCase()+'-geojson';
+      geometryCache[lead.id]=feature.geometry;
       return feature.geometry;
     }
   }catch(error){
     console.warn(`Parcel boundary fetch failed for ${lead.parcelId}:`,error.message);
   }
   return null;
-}
-
-async function loadParcelBoundaries(leads){
-  const promises=leads.map(async lead=>{
-    if(lead.geometry) return lead.geometry;
-    return fetchParcelBoundary(lead);
-  });
-  await Promise.all(promises);
 }
 
 function buildLeadFilters(){
@@ -409,7 +530,7 @@ function showNoDataBanner(){
   if(document.getElementById('no-data-banner')) return;
   const banner = document.createElement('div');
   banner.id = 'no-data-banner';
-  banner.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:950;padding:14px 18px;border-radius:14px;background:rgba(239,68,68,.95);color:#fff;font-size:13px;box-shadow:0 18px 48px rgba(0,0,0,.45);max-width:calc(100%-40px);text-align:center;';
+  banner.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:950;padding:14px 18px;border-radius:14px;background:rgba(242,95,92,.95);color:#fff;font-size:13px;box-shadow:0 18px 48px rgba(0,0,0,.45);max-width:calc(100%-40px);text-align:center;';
   banner.textContent = 'No real lead data loaded. Add `clearwater-leads.json` or include `leads-data.js` with verified data.';
   document.body.appendChild(banner);
 }
@@ -426,7 +547,10 @@ const S={
   sortAsc:false,
   selected:null,
   detailOpen:false,
-  mapMode:'2D'
+  mapMode:'2D',
+  drawerCollapsed:false,
+  detailTab:'overview',
+  povOnHover:true
 };
 
 function loadSaved(){
@@ -474,9 +598,174 @@ function applyFilters(){
     if(f.hideDnc&&p.isDNC) return false;
     if(f.oosOnly&&!p.isOOS) return false;
     if(f.absenteeOnly&&!p.isAbsentee) return false;
-    if(f.mhOnly&&!p.isMH) return false;
+    if(f.mhOnly&&!p.allowsMobileHome) return false;
     return true;
   });
+}
+
+function countActiveFilters(){
+  const f=S.filters;let n=0;
+  if(f.search) n++;if(f.quick) n++;if(f.view!=='all') n++;
+  if(f.counties.length) n++;if(f.ownerTypes.length) n++;
+  if(f.scoreMin>0) n++;if(f.valMax<200000) n++;if(f.frontMin>0) n++;
+  if(f.flood) n++;
+  if(f.hideLocked||f.phoneOnly||f.hideDnc||f.oosOnly||f.absenteeOnly||f.mhOnly) n++;
+  return n;
+}
+
+function updateNavCounts(){
+  const filtered=applyFilters();
+  const el=document.getElementById('nav-lead-count');
+  const fc=document.getElementById('filter-active-count');
+  const mc=document.getElementById('map-count');
+  if(el) el.textContent=filtered.length+' leads';
+  if(fc) fc.textContent=countActiveFilters();
+  if(mc) mc.textContent=filtered.length+' leads shown';
+  const dc=document.getElementById('drawer-count');
+  if(dc) dc.textContent=`${filtered.length} matching`;
+}
+
+function refreshMapView(){
+  updateNavCounts();
+  renderMarkers();
+  renderMapDrawer();
+  updateSelectedParcel(S.selected);
+}
+
+function highlightSelectedMarker(p){
+  document.querySelectorAll('.custom-marker').forEach(m=>m.classList.remove('selected-marker'));
+  if(!p||!markers[p.id]) return;
+  const el=markers[p.id].getElement();
+  if(el) el.querySelector('.custom-marker')?.classList.add('selected-marker');
+}
+
+function syncLeadSelectionUI(p){
+  document.querySelectorAll('.drawer-item').forEach(el=>{
+    el.classList.toggle('active',p&&+el.dataset.id===p.id);
+  });
+  document.querySelectorAll('#view-leads tbody tr').forEach(tr=>{
+    tr.classList.toggle('lead-row-active',p&&+tr.dataset.id===p.id);
+  });
+}
+
+function scoreColor(p){
+  if(p.isLocked) return 'var(--muted)';
+  if(p.score>=70) return 'var(--danger)';
+  if(p.score>=50) return 'var(--warm)';
+  if(p.score>=30) return 'var(--gold)';
+  return 'var(--muted)';
+}
+
+function bindDetailTabs(){
+  const tabs=document.querySelectorAll('#detail-content .tab-btn');
+  const panes=document.querySelectorAll('#detail-content .tab-pane');
+  tabs.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const t=btn.dataset.tab;
+      S.detailTab=t;
+      tabs.forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+      panes.forEach(p=>p.classList.toggle('active',p.dataset.tab===t));
+    });
+  });
+}
+
+function popupHtml(p){
+  const sc=scoreColor(p);
+  return `<div style="min-width:200px;font-family:'DM Sans',sans-serif">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:4px">${p.owner}</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${p.parcelId} · ${p.county}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span style="font-size:11px;color:var(--fg2)">${p.acreage} ac · ${p.frontage||'—'}ft</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:${sc}">${p.score}</span>
+    </div>
+    <div style="font-size:11px;color:var(--accent);font-weight:600">$${p.landValue.toLocaleString()}</div>
+    ${p.zoning?`<div style="font-size:10px;color:var(--muted);margin-top:4px">${p.zoning}</div>`:''}
+  </div>`;
+}
+
+function scoreRingSvg(score,color){
+  const r=16;const c=2*Math.PI*r;const pct=Math.min(100,Math.max(0,score))/100;
+  return `<svg class="score-ring" viewBox="0 0 36 36"><circle class="track" cx="18" cy="18" r="${r}" stroke="var(--border)"/><circle class="fill" cx="18" cy="18" r="${r}" stroke="${color}" stroke-dasharray="${c*pct} ${c}" stroke-dashoffset="0"/></svg>`;
+}
+
+function renderMapDrawer(){
+  const list=document.getElementById('drawer-list');
+  if(!list) return;
+  const q=(document.getElementById('drawer-search')?.value||'').toLowerCase();
+  const filtered=sortLeads(applyFilters()).filter(p=>{
+    if(!q) return true;
+    return p.owner.toLowerCase().includes(q)||p.parcelId.toLowerCase().includes(q)||(p.city||'').toLowerCase().includes(q);
+  }).slice(0,80);
+  list.innerHTML=filtered.map(p=>{
+    const sc=p.score>=70?'var(--danger)':p.score>=50?'var(--warm)':p.score>=30?'var(--gold)':'var(--muted)';
+    const active=S.selected?.id===p.id?'active':'';
+    return `<div class="drawer-item ${active}" data-id="${p.id}" onmouseenter="onLeadHover(prospects.find(x=>x.id===${p.id}))" onmouseleave="onLeadHoverEnd(prospects.find(x=>x.id===${p.id}))" onclick="selectLead(prospects.find(x=>x.id===${p.id}))">
+      <div class="flex items-center justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <div class="font-medium text-xs truncate" style="color:var(--fg)">${p.owner}</div>
+          <div class="text-[10px] truncate" style="color:var(--muted)">${p.parcelId} · ${p.county} · ${p.acreage}ac</div>
+        </div>
+        <span class="font-mono text-xs font-bold shrink-0" style="color:${sc}">${p.score}</span>
+      </div>
+      <div class="flex gap-1 mt-1.5 flex-wrap">
+        ${p.frontage?`<span class="text-[9px] px-1.5 py-0.5 rounded" style="background:var(--bg-el);color:var(--fg2)">${p.frontage}ft</span>`:''}
+        ${p.zoning?`<span class="text-[9px] px-1.5 py-0.5 rounded" style="background:var(--bg-el);color:var(--fg2)">${p.zoning}</span>`:''}
+        ${p.waterAvailable?'<span class="text-[9px]" style="color:var(--accent)">W</span>':''}${p.sewerAvailable?'<span class="text-[9px]" style="color:var(--accent)">S</span>':''}${p.electricAvailable?'<span class="text-[9px]" style="color:var(--accent)">E</span>':''}
+      </div>
+    </div>`;
+  }).join('')||'<div class="p-4 text-xs text-center" style="color:var(--muted)">No leads match</div>';
+  updateNavCounts();
+}
+
+function navigateLead(dir){
+  const filtered=sortLeads(applyFilters());
+  if(!filtered.length) return;
+  const idx=S.selected?filtered.findIndex(p=>p.id===S.selected.id):-1;
+  const next=idx<0?0:Math.max(0,Math.min(filtered.length-1,idx+dir));
+  selectLead(filtered[next]);
+}
+
+function utilityPills(p){
+  const mk=(on,label)=>`<span class="util-pill ${on?'on':'off'}">${on?'<i class="fa-solid fa-check" style="font-size:8px"></i>':''}${label}</span>`;
+  return `${mk(p.waterAvailable,'Water')}${mk(p.sewerAvailable,'Sewer')}${mk(p.electricAvailable,'Electric')}`;
+}
+
+const CMD_ACTIONS=[
+  {id:'map',label:'Go to Map',icon:'fa-map',run:()=>switchView('map')},
+  {id:'leads',label:'Go to Leads table',icon:'fa-address-book',run:()=>switchView('leads')},
+  {id:'dash',label:'Go to Dashboard',icon:'fa-gauge-high',run:()=>switchView('dashboard')},
+  {id:'elite',label:'Filter: Elite 70+',icon:'fa-star',run:()=>{S.filters.quick='elite';updateFilterUI();refreshCurrentView();toast('Elite filter on','info')}},
+  {id:'export',label:'Export CSV',icon:'fa-file-export',run:exportCSV},
+  {id:'reset',label:'Reset all filters',icon:'fa-rotate-left',run:()=>document.getElementById('reset-btn').click()}
+];
+
+function openCommandPalette(){
+  const root=document.getElementById('modal-root');
+  root.innerHTML=`<div class="cmd-palette" id="cmd-ov"><div class="cmd-box"><input class="cmd-input" id="cmd-in" placeholder="Search actions or leads…" autocomplete="off"><div class="cmd-results" id="cmd-res"></div><div class="px-3 py-2 text-[10px] flex gap-3" style="color:var(--muted);border-top:1px solid var(--border)"><span><span class="cmd-kbd">↑↓</span> navigate</span><span><span class="cmd-kbd">↵</span> run</span><span><span class="cmd-kbd">esc</span> close</span></div></div></div>`;
+  const input=document.getElementById('cmd-in');
+  const results=document.getElementById('cmd-res');
+  let sel=0;
+  function render(q=''){
+    const ql=q.toLowerCase();
+    const actions=CMD_ACTIONS.filter(a=>a.label.toLowerCase().includes(ql));
+    const leads=prospects.filter(p=>!ql||p.owner.toLowerCase().includes(ql)||p.parcelId.toLowerCase().includes(ql)).slice(0,8);
+    const items=[...actions.map(a=>({type:'action',...a})),...leads.map(p=>({type:'lead',id:p.id,label:`${p.owner} · ${p.parcelId}`,icon:'fa-map-pin',run:()=>{switchView('map');selectLead(p)}}))];
+    sel=Math.min(sel,Math.max(0,items.length-1));
+    results.innerHTML=items.map((it,i)=>`<div class="cmd-item ${i===sel?'sel':''}" data-i="${i}"><i class="fa-solid ${it.icon} text-xs" style="color:var(--accent);width:14px"></i><span>${it.label}</span></div>`).join('')||'<div class="p-3 text-xs" style="color:var(--muted)">No results</div>';
+    results.querySelectorAll('.cmd-item').forEach(el=>el.addEventListener('click',()=>{items[+el.dataset.i]?.run();root.innerHTML=''}));
+    results._items=items;
+  }
+  render();
+  input.focus();
+  input.addEventListener('input',()=>{sel=0;render(input.value)});
+  input.addEventListener('keydown',e=>{
+    const items=results._items||[];
+    if(e.key==='ArrowDown'){e.preventDefault();sel=Math.min(sel+1,items.length-1);render(input.value)}
+    if(e.key==='ArrowUp'){e.preventDefault();sel=Math.max(sel-1,0);render(input.value)}
+    if(e.key==='Enter'){e.preventDefault();items[sel]?.run();root.innerHTML=''}
+    if(e.key==='Escape') root.innerHTML='';
+  });
+  document.getElementById('cmd-ov').addEventListener('click',e=>{if(e.target.id==='cmd-ov')root.innerHTML=''});
 }
 
 function sortLeads(arr){
@@ -490,7 +779,249 @@ function sortLeads(arr){
   });
 }
 
-let map,clusterGroup,markers={},parcelLayerGroup=null;
+let map,clusterGroup,markerLayerGroup,markers={},hoverParcelLayer,selectedParcelLayer,hoverLoadingLayer;
+let hoverLeadId=null,hoverTimer=null,hoverFetchGen=0;
+let povCesiumViewer=null,povDataSource=null,cesiumParcelDs=null,cesiumHoverId=null;
+
+function getGeometryCenter(geom){
+  if(!geom) return null;
+  let ring=null;
+  if(geom.type==='Polygon') ring=geom.coordinates?.[0];
+  else if(geom.type==='MultiPolygon') ring=geom.coordinates?.[0]?.[0];
+  if(!ring?.length) return null;
+  let lat=0,lng=0;
+  ring.forEach(c=>{lng+=c[0];lat+=c[1];});
+  return{lat:lat/ring.length,lng:lng/ring.length};
+}
+
+function esriRingsToGeoJSON(geom){
+  if(!geom) return null;
+  if(geom.type==='Polygon'||geom.type==='MultiPolygon') return geom;
+  if(geom.rings) return{type:'Polygon',coordinates:geom.rings};
+  return null;
+}
+
+async function ensureLeadGeometry(lead){
+  if(lead.geometry) return esriRingsToGeoJSON(lead.geometry);
+  if(geometryCache[lead.id]){lead.geometry=geometryCache[lead.id];return esriRingsToGeoJSON(lead.geometry);}
+  const geo=await fetchParcelBoundary(lead);
+  return esriRingsToGeoJSON(geo);
+}
+
+function isActiveLead(lead){
+  if(!lead) return false;
+  return S.selected?.id===lead.id||hoverLeadId===lead.id;
+}
+
+function hoverParcelStyle(){
+  const c=pal('parcel');
+  return{color:c,weight:3,opacity:1,fillColor:c,fillOpacity:.2,dashArray:null,className:'parcel-hover-glow'};
+}
+function selectedParcelStyle(){
+  const c=pal('gold');
+  return{color:c,weight:4,opacity:1,fillColor:c,fillOpacity:.24,dashArray:null};
+}
+
+function clearHoverParcel(){
+  hoverParcelLayer?.clearLayers();
+  hoverLoadingLayer?.clearLayers();
+  clearCesiumHover();
+}
+
+function showHoverLoading(lead){
+  if(!hoverLoadingLayer||!lead?.lat) return;
+  hoverLoadingLayer.clearLayers();
+  L.circleMarker([lead.lat,lead.lng],{radius:10,color:pal('parcel'),weight:2,opacity:.85,fillColor:pal('parcel'),fillOpacity:.12,dashArray:'5,5'}).addTo(hoverLoadingLayer);
+}
+
+function clearCesiumHover(){
+  if(!cesiumParcelDs||cesiumHoverId==null) return;
+  cesiumParcelDs.entities.values.forEach(ent=>{
+    const id=ent.leadId||ent.properties?.leadId?.getValue?.();
+    const lead=prospects.find(p=>p.id===id);
+    if(!lead) return;
+    const color=Cesium.Color.fromCssColorString(scoreHex(lead));
+    if(ent.polygon){
+      ent.polygon.material=color.withAlpha(.25);
+      ent.polygon.outlineColor=color.withAlpha(.9);
+    }
+  });
+  cesiumHoverId=null;
+}
+
+function highlightCesiumParcel(lead){
+  if(!cesiumParcelDs||!lead||S.mapMode!=='3D') return;
+  clearCesiumHover();
+  cesiumHoverId=lead.id;
+  const hi=Cesium.Color.fromCssColorString(S.selected?.id===lead.id?pal('gold'):pal('parcel'));
+  cesiumParcelDs.entities.values.forEach(ent=>{
+    if(ent.leadId===lead.id&&ent.polygon){
+      ent.polygon.material=hi.withAlpha(.45);
+      ent.polygon.outlineColor=hi;
+      ent.polygon.outlineWidth=3;
+    }
+  });
+}
+
+function drawParcelOnLayer(layerGroup,geometry,style){
+  if(!layerGroup||!geometry) return null;
+  const gj=esriRingsToGeoJSON(geometry);
+  if(!gj) return null;
+  const layer=L.geoJSON(gj,{style:()=>style});
+  layer.addTo(layerGroup);
+  return layer;
+}
+
+async function showHoverParcel(lead){
+  if(!lead||!hoverParcelLayer) return;
+  if(S.selected?.id===lead.id) return;
+  hoverParcelLayer.clearLayers();
+  showHoverLoading(lead);
+  const geo=await ensureLeadGeometry(lead);
+  if(!isActiveLead(lead)||S.selected?.id===lead.id) return;
+  hoverLoadingLayer?.clearLayers();
+  if(geo) drawParcelOnLayer(hoverParcelLayer,geo,hoverParcelStyle());
+  else showHoverLoading(lead);
+  if(S.mapMode==='3D') highlightCesiumParcel(lead);
+}
+
+async function updateSelectedParcel(lead){
+  if(!selectedParcelLayer) return;
+  selectedParcelLayer.clearLayers();
+  if(!lead) return;
+  const geo=await ensureLeadGeometry(lead);
+  if(S.selected?.id!==lead.id) return;
+  drawParcelOnLayer(selectedParcelLayer,geo,selectedParcelStyle());
+  hoverParcelLayer?.clearLayers();
+  hoverLoadingLayer?.clearLayers();
+  if(S.mapMode==='3D') highlightCesiumParcel(lead);
+}
+
+function googleEarthUrl(lat,lng,heading=0){
+  return `https://earth.google.com/web/@${lat},${lng},45a,350d,35y,${heading}h,0t,0r`;
+}
+
+function googleStreetViewUrl(lat,lng){
+  return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+}
+
+function streetViewEmbedUrl(lat,lng){
+  const key=window.GOOGLE_MAPS_KEY;
+  if(!key) return null;
+  return `https://www.google.com/maps/embed/v1/streetview?key=${key}&location=${lat},${lng}&heading=210&pitch=5&fov=85`;
+}
+
+function initPovViewer(){
+  if(povCesiumViewer||typeof Cesium==='undefined') return;
+  povCesiumViewer=new Cesium.Viewer('pov-cesium',{
+    imageryProvider:new Cesium.UrlTemplateImageryProvider({url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',credit:new Cesium.Credit('Esri')}),
+    terrainProvider:new Cesium.EllipsoidTerrainProvider(),
+    baseLayerPicker:false,geocoder:false,timeline:false,animation:false,homeButton:false,sceneModePicker:false,fullscreenButton:false,navigationHelpButton:false,selectionIndicator:false,infoBox:false,scene3DOnly:true
+  });
+  povCesiumViewer.scene.globe.enableLighting=true;
+  povCesiumViewer.scene.screenSpaceCameraController.enableRotate=true;
+  povCesiumViewer.scene.screenSpaceCameraController.enableZoom=true;
+}
+
+function setPovLoading(on){
+  const el=document.getElementById('pov-loading');
+  if(el) el.classList.toggle('off',!on);
+}
+
+function hidePovPanel(){
+  const panel=document.getElementById('pov-panel');
+  if(panel) panel.classList.remove('visible');
+  setPovLoading(false);
+}
+
+async function showPovPanel(lead){
+  if(!S.povOnHover||!lead) return;
+  const leadId=lead.id;
+  await ensureLeadGeometry(lead);
+  if(!isActiveLead({id:leadId})) return;
+  const panel=document.getElementById('pov-panel');
+  const title=document.getElementById('pov-title');
+  const sub=document.getElementById('pov-sub');
+  const earthLink=document.getElementById('pov-earth-link');
+  const streetLink=document.getElementById('pov-street-link');
+  const streetFrame=document.getElementById('pov-streetview');
+  const cesiumEl=document.getElementById('pov-cesium');
+  if(!panel) return;
+  const center=getGeometryCenter(lead.geometry)||{lat:lead.lat,lng:lead.lng};
+  title.textContent=lead.owner;
+  sub.textContent=`${lead.parcelId} · ${lead.county}`;
+  earthLink.href=googleEarthUrl(center.lat,center.lng);
+  streetLink.href=googleStreetViewUrl(center.lat,center.lng);
+  panel.classList.add('visible');
+  setPovLoading(true);
+  const embed=streetViewEmbedUrl(center.lat,center.lng);
+  if(embed&&streetFrame){
+    streetFrame.src=embed;
+    streetFrame.classList.add('active');
+    if(cesiumEl) cesiumEl.classList.add('hidden');
+    setPovLoading(false);
+    return;
+  }
+  if(streetFrame){streetFrame.classList.remove('active');streetFrame.removeAttribute('src');}
+  if(cesiumEl) cesiumEl.classList.remove('hidden');
+  initPovViewer();
+  if(!povCesiumViewer){setPovLoading(false);return;}
+  povCesiumViewer.resize&&povCesiumViewer.resize();
+  if(povDataSource){povCesiumViewer.dataSources.remove(povDataSource);povDataSource=null;}
+  const geo=esriRingsToGeoJSON(lead.geometry);
+  if(geo){
+    const fc={type:'FeatureCollection',features:[{type:'Feature',geometry:geo,properties:{}}]};
+    Cesium.GeoJsonDataSource.load(fc,{clampToGround:true}).then(ds=>{
+      povDataSource=ds;
+      povCesiumViewer.dataSources.add(ds);
+      ds.entities.values.forEach(ent=>{
+        if(ent.polygon){
+          ent.polygon.material=Cesium.Color.fromCssColorString(pal('parcel')).withAlpha(.38);
+          ent.polygon.outline=true;
+          ent.polygon.outlineColor=Cesium.Color.fromCssColorString(pal('parcel'));
+          ent.polygon.extrudedHeight=12;
+        }
+      });
+      povCesiumViewer.flyTo(ds,{duration:.6,offset:new Cesium.HeadingPitchRange(Cesium.Math.toRadians(35),Cesium.Math.toRadians(-28),180)});
+      setPovLoading(false);
+    }).catch(()=>flyPovCamera(center));
+  } else flyPovCamera(center);
+}
+
+function flyPovCamera(center){
+  if(!povCesiumViewer||!center) return;
+  povCesiumViewer.camera.flyTo({
+    destination:Cesium.Cartesian3.fromDegrees(center.lng,center.lat,120),
+    orientation:{heading:Cesium.Math.toRadians(40),pitch:Cesium.Math.toRadians(-32),roll:0},
+    duration:.55
+  });
+  setPovLoading(false);
+}
+
+async function onLeadHover(lead){
+  if(!lead) return;
+  hoverLeadId=lead.id;
+  const gen=++hoverFetchGen;
+  clearTimeout(hoverTimer);
+  showHoverLoading(lead);
+  hoverTimer=setTimeout(async()=>{
+    if(hoverLeadId!==lead.id) return;
+    await showHoverParcel(lead);
+    if(hoverLeadId!==lead.id||gen!==hoverFetchGen) return;
+    if(S.povOnHover) showPovPanel(lead);
+  },80);
+}
+
+function onLeadHoverEnd(lead){
+  clearTimeout(hoverTimer);
+  if(lead&&S.selected?.id===lead.id) return;
+  if(!lead||hoverLeadId===lead.id){
+    hoverLeadId=null;
+    clearHoverParcel();
+    if(S.selected) showPovPanel(S.selected);
+    else hidePovPanel();
+  }
+}
 
 function initMap(){
   map=L.map('map',{zoomControl:true,attributionControl:true}).setView([27.97,-82.76],10);
@@ -504,11 +1035,13 @@ function initMap(){
 
   clusterGroup=L.markerClusterGroup({spiderfyOnMaxZoom:true,showCoverageOnHover:false,maxClusterRadius:40,iconCreateFunction:function(cluster){
     const n=cluster.getChildCount();
-    return L.divIcon({html:`<div style="background:rgba(0,212,170,.35);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;font-size:12px;color:var(--bg)">${n}</div>`,className:'',iconSize:[36,36]});
+    return L.divIcon({html:`<div style="background:rgba(217,104,71,.45);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Syne';font-weight:700;font-size:12px;color:var(--fg)">${n}</div>`,className:'',iconSize:[36,36]});
   }});
 
-  parcelLayerGroup=L.layerGroup().addTo(map);
-  parcelLayerGroup=L.layerGroup().addTo(map);
+  markerLayerGroup=L.layerGroup().addTo(map);
+  hoverParcelLayer=L.layerGroup().addTo(map);
+  selectedParcelLayer=L.layerGroup().addTo(map);
+  hoverLoadingLayer=L.layerGroup().addTo(map);
   map.addLayer(clusterGroup);
   init3DViewer();
   switchMapMode('2D');
@@ -540,33 +1073,52 @@ function init3DViewer(){
       if(lead) selectLead(lead);
     }
   },Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  let cesiumHoverId=null;
   handler.setInputAction(move=>{
     const cartesian=cesiumViewer.camera.pickEllipsoid(move.endPosition,cesiumViewer.scene.globe.ellipsoid);
     if(cartesian){
       const cartographic=Cesium.Cartographic.fromCartesian(cartesian);
       document.getElementById('map-coords').textContent=`${Cesium.Math.toDegrees(cartographic.latitude).toFixed(4)}, ${Cesium.Math.toDegrees(cartographic.longitude).toFixed(4)}`;
     }
+    const picked=cesiumViewer.scene.pick(move.endPosition);
+    const leadId=picked?.id?.leadId;
+    if(leadId&&leadId!==cesiumHoverId){
+      cesiumHoverId=leadId;
+      const lead=prospects.find(p=>p.id===leadId);
+      if(lead) onLeadHover(lead);
+    }else if(!leadId&&cesiumHoverId){
+      const lead=prospects.find(p=>p.id===cesiumHoverId);
+      cesiumHoverId=null;
+      onLeadHoverEnd(lead);
+    }
   },Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+}
+
+async function preloadGeometriesFor3D(){
+  const batch=applyFilters().slice(0,60);
+  await Promise.all(batch.map(l=>ensureLeadGeometry(l)));
+  if(S.mapMode==='3D') render3DParcels();
 }
 
 function render3DParcels(){
   if(!cesiumViewer) return;
   cesiumViewer.dataSources.removeAll();
-  const features=applyFilters().filter(p=>p.geometry).map(p=>({
-    type:'Feature',
-    geometry:p.geometry,
-    properties:{leadId:p.id,score:p.score,owner:p.owner,county:p.county,parcelId:p.parcelId}
-  }));
+  const features=applyFilters().map(p=>{
+    const geometry=esriRingsToGeoJSON(p.geometry);
+    if(!geometry) return null;
+    return{type:'Feature',geometry,properties:{leadId:p.id,score:p.score,owner:p.owner,county:p.county,parcelId:p.parcelId}};
+  }).filter(Boolean);
   if(!features.length) return;
 
   const featureCollection={type:'FeatureCollection',features};
   Cesium.GeoJsonDataSource.load(featureCollection,{clampToGround:true}).then(ds=>{
+    cesiumParcelDs=ds;
     cesiumViewer.dataSources.add(ds);
     ds.entities.values.forEach(entity=>{
       const props=entity.properties;
       const leadId=props?.leadId?.getValue ? props.leadId.getValue() : null;
       const lead=prospects.find(x=>x.id===leadId);
-      const color=lead ? (lead.score>=70?Cesium.Color.fromCssColorString('#ef4444'):(lead.score>=50?Cesium.Color.fromCssColorString('#e8a832'):(lead.score>=30?Cesium.Color.fromCssColorString('#d4a64a'):Cesium.Color.fromCssColorString('#5e7268')))) : Cesium.Color.fromCssColorString('#5e7268');
+      const color=lead ? Cesium.Color.fromCssColorString(scoreHex(lead)) : Cesium.Color.fromCssColorString(pal('muted'));
       const height=lead ? Math.min(120,Math.max(20,lead.score * 2 + (lead.landValue||0) / 1500)) : 25;
       if(entity.polygon){
         entity.polygon.height=0;
@@ -578,6 +1130,7 @@ function render3DParcels(){
       }
       entity.name=lead ? `${lead.owner} · ${lead.parcelId}` : 'Parcel';
       entity.description=lead ? `Score: ${lead.score}\nCounty: ${lead.county}` : undefined;
+      if(leadId) entity.leadId=leadId;
     });
   }).catch(error=>{
     console.warn('Cesium parcel data load failed:',error);
@@ -596,7 +1149,7 @@ function switchMapMode(mode){
     if(cesiumViewer){
       cesiumViewer.resize&&cesiumViewer.resize();
       cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(-82.76,27.97,130000),orientation:{heading:Cesium.Math.toRadians(30),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8});
-      render3DPoints();
+      preloadGeometriesFor3D();
     }
   } else {
     cesiumEl.classList.add('hidden');
@@ -615,132 +1168,195 @@ function scoreClass(p){
 
 function renderMarkers(){
   clusterGroup.clearLayers();
+  markerLayerGroup?.clearLayers();
   markers={};
   const filtered=applyFilters();
+  const useCluster=S.filters.cluster;
   filtered.forEach(p=>{
     const cls=scoreClass(p);
+    const sel=S.selected?.id===p.id?' selected-marker':'';
     const size=p.isLocked?10:p.score>=70?14:p.score>=50?12:10;
     const icon=L.divIcon({
       className:'',
-      html:`<div class="custom-marker ${cls}" style="width:${size}px;height:${size}px"></div>`,
+      html:`<div class="custom-marker ${cls}${sel}" style="width:${size}px;height:${size}px"></div>`,
       iconSize:[size,size],iconAnchor:[size/2,size/2]
     });
     const m=L.marker([p.lat,p.lng],{icon});
+    m.bindPopup(popupHtml(p),{maxWidth:280,className:'lead-popup'});
     m.on('click',()=>selectLead(p));
-    clusterGroup.addLayer(m);
+    m.on('mouseover',()=>onLeadHover(p));
+    m.on('mouseout',()=>onLeadHoverEnd(p));
+    if(useCluster) clusterGroup.addLayer(m);
+    else m.addTo(map);
     markers[p.id]=m;
   });
-  document.getElementById('map-count').textContent=`${filtered.length} leads shown`;
   if(S.mapMode==='3D') render3DParcels();
-}
-
-function styleParcelLayer(lead){
-  const baseColor=lead.isLocked? '#5e7268' : lead.score>=70? '#ef4444' : lead.score>=50? '#e8a832' : lead.score>=30? '#d4a64a' : '#6b7280';
-  return {color:baseColor,weight:2.5,opacity:0.95,fill:false,dashArray:'5,5'};
-}
-
-function renderParcelBorders(){
-  if(!parcelLayerGroup) return;
-  parcelLayerGroup.clearLayers();
-  applyFilters().forEach(lead=>{
-    if(!lead.geometry) return;
-    const layer=L.geoJSON(lead.geometry,{style:()=>styleParcelLayer(lead)});
-    layer.eachLayer(l=>{
-      l.on('mouseover',()=>l.setStyle({weight:4,color:'#00d4aa',dashArray:null}));
-      l.on('mouseout',()=>l.setStyle(styleParcelLayer(lead)));
-      l.on('click',()=>selectLead(lead));
-    });
-    layer.addTo(parcelLayerGroup);
-  });
+  highlightSelectedMarker(S.selected);
 }
 
 function selectLead(p){
+  if(!p) return;
   S.selected=p;S.detailOpen=true;
   openDetailPanel(p);
-  if(map) map.flyTo([p.lat,p.lng],13,{duration:.8});
+  highlightSelectedMarker(p);
+  syncLeadSelectionUI(p);
+  renderMapDrawer();
+  const activeDrawer=document.querySelector(`.drawer-item[data-id="${p.id}"]`);
+  if(activeDrawer) activeDrawer.scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(map) map.flyTo([p.lat,p.lng],15,{duration:.8});
+  hoverLeadId=p.id;
+  ensureLeadGeometry(p).then(()=>{
+    if(S.selected?.id!==p.id) return;
+    const geo=esriRingsToGeoJSON(p.geometry);
+    if(geo&&map){
+      const bounds=L.geoJSON(geo).getBounds();
+      if(bounds.isValid()) map.flyToBounds(bounds.pad(.25),{duration:.8,maxZoom:17});
+    }
+    updateSelectedParcel(p);
+    showPovPanel(p);
+  });
   if(cesiumViewer&&S.mapMode==='3D'){
     cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(p.lng,p.lat,1000),orientation:{heading:Cesium.Math.toRadians(15),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8});
   }
-  document.querySelectorAll('.lead-card').forEach(c=>c.classList.remove('selected'));
-  const card=document.querySelector(`.lead-card[data-id="${p.id}"]`);
-  if(card){card.classList.add('selected');card.scrollIntoView({behavior:'smooth',block:'nearest'});}
 }
+
+function detailRow(label,val){return `<div class="flex justify-between gap-3 py-1"><span class="shrink-0" style="color:var(--muted)">${label}</span><span class="text-right text-[12px]">${val}</span></div>`;}
 
 function openDetailPanel(p){
   const dp=document.getElementById('detail-panel');
   const dc=document.getElementById('detail-content');
-  const sc=scoreClass(p);
+  const sc=scoreColor(p);
   const scoreLabel=p.isLocked?'Locked':p.score>=70?'Elite':p.score>=50?'Strong':p.score>=30?'Moderate':'Low';
   const scoreBadge=p.isLocked?'badge-muted':p.score>=70?'badge-danger':p.score>=50?'badge-warm':p.score>=30?'badge-gold':'badge-muted';
+  const tab=S.detailTab||'overview';
+  const filtered=sortLeads(applyFilters());
+  const idx=filtered.findIndex(x=>x.id===p.id);
+  const pos=idx>=0?`${idx+1} / ${filtered.length}`:'—';
 
   dc.innerHTML=`
-    <div class="flex items-center justify-between mb-3">
-      <div class="flex items-center gap-2">
-        <span class="badge ${scoreBadge}"><i class="fa-solid fa-star mr-1"></i>${p.score} ${scoreLabel}</span>
-        ${p.isLocked?'<span class="badge badge-muted"><i class="fa-solid fa-lock mr-1"></i>Locked</span>':''}
+    <div class="flex items-start gap-3 mb-4">
+      <div class="relative shrink-0" style="width:52px;height:52px">
+        ${scoreRingSvg(p.score,sc)}
+        <span class="absolute inset-0 flex items-center justify-center font-mono text-xs font-bold" style="transform:rotate(90deg);color:${sc}">${p.score}</span>
       </div>
-      <div class="flex items-center gap-1">
-        <button onclick="toggleFav(${p.id})" class="btn-ghost px-2" title="Favorite"><i class="fa-${p.favorite?'solid':'regular'} fa-star text-xs" style="color:${p.favorite?'var(--gold)':'var(--muted)'}"></i></button>
-        <button onclick="closeDetail()" class="btn-ghost px-2" title="Close"><i class="fa-solid fa-xmark text-xs"></i></button>
+      <div class="min-w-0 flex-1">
+        <h3 class="font-heading font-bold text-base truncate" style="color:var(--fg)">${p.owner}</h3>
+        <p class="text-[11px] truncate" style="color:var(--muted)">${p.parcelId} · ${p.ownerType}</p>
+        <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+          <span class="badge ${scoreBadge} text-[9px]">${scoreLabel}</span>
+          ${p.isLocked?'<span class="badge badge-muted text-[9px]"><i class="fa-solid fa-lock mr-1"></i>Locked</span>':''}
+          ${p.favorite?'<span class="badge badge-gold text-[9px]"><i class="fa-solid fa-star mr-1"></i>Fav</span>':''}
+        </div>
       </div>
-    </div>
-    <h3 class="font-heading font-bold text-base mb-1" style="color:var(--fg)">${p.owner}</h3>
-    <p class="text-xs mb-4" style="color:var(--muted)">${p.parcelId} · ${p.ownerType}</p>
-
-    <div class="space-y-2.5 text-[13px]">
-      <div class="flex justify-between"><span style="color:var(--muted)">Situs</span><span class="text-right">${p.situsAddress||`${p.address}, ${p.city}, FL`}</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Mailing</span><span class="text-right">${p.mailingAddress||p.mailState||'—'}${p.isOOS?' (OOS)':p.isAbsentee?' (Absentee)':''}</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">County</span><span>${p.county}</span></div>
-      ${p.waterFeatures?.length?`<div class="flex justify-between"><span style="color:var(--muted)">Water</span><span class="text-right text-xs" style="max-width:58%">${p.waterFeatures.join(', ')}${p.waterFeatureSources?.length?`<br><span style="color:var(--muted)">via ${p.waterFeatureSources.join(', ')}</span>`:''}</span></div>`:''}
-      <div class="flex justify-between"><span style="color:var(--muted)">Acreage</span><span class="font-mono">${p.acreage} ac</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Zoning</span><span class="badge badge-accent">${p.zoning}</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Frontage</span><span class="font-mono">${p.frontage} ft</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Flood</span><span style="color:${p.floodZone==='AE'?'var(--danger)':'var(--success)'}">${p.floodZone==='None'?'None':p.floodZone}</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Land value</span><span class="font-heading font-bold" style="color:var(--accent)">$${p.landValue.toLocaleString()}</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Total appraisal</span><span>$${p.appraisalTotal.toLocaleString()}</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Years owned</span><span>${p.yrsOwned} yrs</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Multi-parcel</span><span>${p.multiParcel>1?p.multiParcel+' parcels':'Single'}</span></div>
-      ${p.phone?`<div class="flex justify-between"><span style="color:var(--muted)">Phone</span><a href="tel:${p.phone}" class="font-mono" style="color:var(--accent)">${p.phone}</a>${p.skiptraceSource?` <span class="text-[10px]" style="color:var(--muted)">(${p.skiptraceSource})</span>`:''}</div>`:''}
-      ${p.email?`<div class="flex justify-between"><span style="color:var(--muted)">Email</span><a href="mailto:${p.email}" class="font-mono text-xs" style="color:var(--accent)">${p.email}</a></div>`:''}
-      ${p.isDNC?'<div class="text-[10px] px-2 py-1 rounded" style="background:var(--danger-dim);color:var(--danger)"><i class="fa-solid fa-ban mr-1"></i>DNC — Do Not Call</div>':''}
-    </div>
-
-    <hr class="my-4" style="border-color:var(--border)">
-
-    <div class="mb-4">
-      <label class="filter-label">Status</label>
-      <div class="flex flex-wrap gap-1.5">
-        ${STATUSES.map(st=>`<span class="chip text-[10px] ${p.status===st?'on':''}" onclick="setLeadStatus(${p.id},'${st}')">${st}</span>`).join('')}
+      <div class="flex flex-col gap-0.5 shrink-0">
+        <button onclick="toggleFav(${p.id})" class="btn-ghost px-2 py-1" title="Favorite"><i class="fa-${p.favorite?'solid':'regular'} fa-star text-xs" style="color:${p.favorite?'var(--gold)':'var(--muted)'}"></i></button>
+        <button onclick="closeDetail()" class="btn-ghost px-2 py-1" title="Close (Esc)"><i class="fa-solid fa-xmark text-xs"></i></button>
       </div>
     </div>
 
-    <div class="flex flex-col gap-2">
-      ${p.phone&&!p.isDNC?`<button class="btn-p text-xs w-full" onclick="toast('Calling ${p.phone}...','info')"><i class="fa-solid fa-phone mr-2"></i>Call Owner</button>`:''}
-      ${p.phone?`<button class="btn-s text-xs w-full" onclick="toast('SMS drafted','info')"><i class="fa-solid fa-comment mr-2"></i>Send SMS</button>`:''}
-      <button class="btn-s text-xs w-full" onclick="toast('Mail template generated','success')"><i class="fa-solid fa-envelope mr-2"></i>Direct Mail</button>
-      <button class="btn-s text-xs w-full" onclick="toast('Note saved','success')"><i class="fa-solid fa-sticky-note mr-2"></i>Add Note</button>
+    <div class="flex items-center justify-between mb-3 text-[10px]" style="color:var(--muted)">
+      <button class="btn-ghost px-2 py-1" onclick="navigateLead(-1)" title="Previous (J / ←)"><i class="fa-solid fa-chevron-left mr-1"></i>Prev</button>
+      <span class="font-mono">${pos}</span>
+      <button class="btn-ghost px-2 py-1" onclick="navigateLead(1)" title="Next (K / →)">Next<i class="fa-solid fa-chevron-right ml-1"></i></button>
     </div>
 
-    <hr class="my-4" style="border-color:var(--border)">
-    <div class="filter-label mb-2">Why this score</div>
-    <div class="space-y-1.5 text-[11px]">
-      ${p.landValue<=25000?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Land under $25K (+25)</div>':'<div class="flex items-center gap-2" style="color:var(--muted)"><i class="fa-solid fa-circle"></i>Land $'+p.landValue.toLocaleString()+'</div>'}
-      ${p.frontage>=50?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Frontage 50+ ft (+15)</div>':''}
-      ${p.isOOS?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Out-of-state owner (+15)</div>':''}
-      ${p.isAbsentee?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Absentee owner (+10)</div>':''}
-      ${['Heirs','Estate','Trust'].includes(p.ownerType)?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>'+p.ownerType+' owner (+10)</div>':''}
-      ${p.floodZone==='AE'?'<div class="flex items-center gap-2" style="color:var(--danger)"><i class="fa-solid fa-times-circle"></i>AE flood zone (-10)</div>':''}
-      ${p.phone&&!p.isDNC?'<div class="flex items-center gap-2" style="color:var(--success)"><i class="fa-solid fa-check-circle"></i>Has reachable phone (+10)</div>':''}
+    <div class="detail-tabs">
+      <button class="tab-btn ${tab==='overview'?'active':''}" data-tab="overview">Overview</button>
+      <button class="tab-btn ${tab==='land'?'active':''}" data-tab="land">Land</button>
+      <button class="tab-btn ${tab==='contact'?'active':''}" data-tab="contact">Contact</button>
+      <button class="tab-btn ${tab==='score'?'active':''}" data-tab="score">Score</button>
+    </div>
+
+    <div class="tab-pane ${tab==='overview'?'active':''}" data-tab="overview">
+      <div class="space-y-0.5 text-[13px] mb-4">
+        ${detailRow('Situs',p.situsAddress||`${p.address}, ${p.city}, FL`)}
+        ${detailRow('County',p.county)}
+        ${detailRow('Acreage',`<span class="font-mono">${p.acreage} ac</span>${p.buildableAcres?` <span style="color:var(--muted)">(${p.buildableAcres} buildable)</span>`:''}`)}
+        ${detailRow('Land value',`<span class="font-heading font-bold" style="color:var(--accent)">$${p.landValue.toLocaleString()}</span>${p.pricePerAcre?`<br><span class="text-[10px] font-mono" style="color:var(--muted)">$${p.pricePerAcre.toLocaleString()}/acre</span>`:''}`)}
+        ${detailRow('Flood',`<span style="color:${p.floodZone==='AE'?'var(--danger)':'var(--success)'}">${p.floodZone==='None'?'None':p.floodZone}${p.inSFHA?' (SFHA)':''}</span>`)}
+        ${p.developmentPotential?detailRow('Dev. potential',`<span class="badge ${p.developmentPotential==='High'?'badge-success':p.developmentPotential==='Medium'?'badge-warm':'badge-muted'}">${p.developmentPotential}</span>`):''}
+      </div>
+      <div class="mb-3">
+        <label class="filter-label">Status</label>
+        <div class="flex flex-wrap gap-1.5">
+          ${STATUSES.map(st=>`<span class="chip text-[10px] ${p.status===st?'on':''}" onclick="setLeadStatus(${p.id},'${st}')">${st}</span>`).join('')}
+        </div>
+      </div>
+      <div class="flex flex-col gap-2">
+        ${p.phone&&!p.isDNC?`<button class="btn-p text-xs w-full" onclick="toast('Calling ${p.phone}...','info')"><i class="fa-solid fa-phone mr-2"></i>Call Owner</button>`:''}
+        ${p.phone?`<button class="btn-s text-xs w-full" onclick="toast('SMS drafted','info')"><i class="fa-solid fa-comment mr-2"></i>Send SMS</button>`:''}
+        <button class="btn-s text-xs w-full" onclick="toast('Mail template generated','success')"><i class="fa-solid fa-envelope mr-2"></i>Direct Mail</button>
+      </div>
+    </div>
+
+    <div class="tab-pane ${tab==='land'?'active':''}" data-tab="land">
+      <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--accent)">Frontage & Access</div>
+      <div class="space-y-0.5 text-[13px] mb-4">
+        ${detailRow('Frontage',`<span class="font-mono">${p.roadFrontage||`${p.frontage||'—'} ft`}</span>${p.frontageSource?`<br><span class="text-[10px]" style="color:var(--muted)">${p.frontageSource}</span>`:''}`)}
+        ${detailRow('Depth',`<span class="font-mono">${p.lotDepthFt?`${p.lotDepthFt} ft`:'—'}</span>${p.frontageDepthRatio?` <span style="color:var(--muted)">(${p.frontageDepthRatio}:1)</span>`:''}`)}
+        ${detailRow('Road access',`${p.roadAccess||'—'}${p.legalAccess?` · ${p.legalAccess}`:''}`)}
+        ${p.nearestRoad?detailRow('Nearest road',`${p.nearestRoad}${p.distToHighwayMi!=null?`<br><span style="color:var(--muted)">${p.highwayName||'Highway'} ${p.distToHighwayMi} mi</span>`:''}`):''}
+      </div>
+      <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--accent)">Zoning</div>
+      <div class="space-y-0.5 text-[13px] mb-4">
+        ${detailRow('Code',`<span class="badge badge-accent">${p.zoning||'—'}</span>`)}
+        ${detailRow('Category',`${p.zoningCategory||'—'}${p.allowsMobileHome?` <span class="badge badge-warm text-[9px]">MH OK</span>`:''}`)}
+        ${p.zoningDescription?`<div class="text-[11px] py-1" style="color:var(--muted)">${p.zoningDescription}</div>`:''}
+      </div>
+      <div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--accent)">Utilities</div>
+      <div class="flex flex-wrap gap-1.5 mb-3">${utilityPills(p)}</div>
+      <div class="space-y-0.5 text-[13px]">
+        ${p.waterProvider?detailRow('Water',`${p.waterProvider}${p.waterType?` (${p.waterType})`:''}`):''}
+        ${p.sewerProvider?detailRow('Sewer',`${p.sewerProvider}${p.sewerType?` (${p.sewerType})`:''}`):''}
+        ${p.electricProvider?detailRow('Electric',p.electricProvider):''}
+        ${p.estSubdivisionLots>1?detailRow('Subdivision',`~${p.estSubdivisionLots} lots`):''}
+        ${p.elevationFt?detailRow('Elevation',`<span class="font-mono">${p.elevationFt} ft</span>`):''}
+        ${p.waterFeatures?.length?detailRow('Water features',`<span class="text-xs">${p.waterFeatures.join(', ')}</span>`):''}
+      </div>
+    </div>
+
+    <div class="tab-pane ${tab==='contact'?'active':''}" data-tab="contact">
+      <div class="space-y-0.5 text-[13px] mb-4">
+        ${detailRow('Mailing',`${p.mailingAddress||p.mailState||'—'}${p.isOOS?' <span class="badge badge-warm text-[9px]">OOS</span>':p.isAbsentee?' <span class="badge badge-muted text-[9px]">Absentee</span>':''}`)}
+        ${detailRow('Years owned',`${p.yrsOwned} yrs${p.equityVsSalePct!=null?` <span style="color:var(--muted)">(+${p.equityVsSalePct}% vs sale)</span>`:''}`)}
+        ${detailRow('Portfolio',p.ownerParcelCount>1?`${p.ownerParcelCount} parcels in dataset`:'Single parcel')}
+        ${detailRow('Appraisal',`$${p.appraisalTotal.toLocaleString()}${p.estAnnualTax?`<br><span class="text-[10px]" style="color:var(--muted)">~$${p.estAnnualTax.toLocaleString()}/yr tax</span>`:''}`)}
+        ${p.wholesaleOfferEst?detailRow('Wholesale est.',`<span class="font-mono">$${p.wholesaleOfferEst.toLocaleString()}</span>`):''}
+      </div>
+      ${p.phone?`<div class="card p-3 mb-3"><div class="text-[10px] mb-1" style="color:var(--muted)">Phone</div><a href="tel:${p.phone}" class="font-mono text-lg font-bold" style="color:var(--accent)">${p.phone}</a>${p.skiptraceSource?`<div class="text-[10px] mt-1" style="color:var(--muted)">via ${p.skiptraceSource}</div>`:''}</div>`:'<div class="text-xs p-3 rounded-lg mb-3" style="background:var(--bg-el);color:var(--muted)">No phone on file — run skiptrace</div>'}
+      ${p.email?`<div class="card p-3 mb-3"><div class="text-[10px] mb-1" style="color:var(--muted)">Email</div><a href="mailto:${p.email}" class="font-mono text-sm" style="color:var(--accent)">${p.email}</a></div>`:''}
+      ${p.isDNC?'<div class="text-[10px] px-2 py-1.5 rounded mb-3" style="background:var(--danger-dim);color:var(--danger)"><i class="fa-solid fa-ban mr-1"></i>DNC — Do Not Call</div>':''}
+      ${(p.distHospitalMi||p.distSchoolMi||p.distGroceryMi)?`<div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--accent)">Amenities</div><div class="text-[11px] space-y-1" style="color:var(--muted)">${p.distHospitalMi?`Hospital ${p.distHospitalMi} mi<br>`:''}${p.distSchoolMi?`School ${p.distSchoolMi} mi<br>`:''}${p.distGroceryMi?`Grocery ${p.distGroceryMi} mi`:''}</div>`:''}
+    </div>
+
+    <div class="tab-pane ${tab==='score'?'active':''}" data-tab="score">
+      ${p.investorSignals?.length?`<div class="filter-label mb-2">Investor signals</div><div class="space-y-1 text-[11px] mb-4">${p.investorSignals.map(s=>`<div style="color:var(--success)"><i class="fa-solid fa-arrow-trend-up mr-1"></i>${s}</div>`).join('')}</div>`:''}
+      ${p.riskFlags?.length?`<div class="filter-label mb-2">Risk flags</div><div class="space-y-1 text-[11px] mb-4">${p.riskFlags.map(s=>`<div style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${s}</div>`).join('')}</div>`:''}
+      <div class="filter-label mb-2">Why this score</div>
+      <div class="space-y-1.5 text-[11px]">
+        ${(p.scoreBreakdown||[]).map(line=>{
+          const neg=line.includes('(-');
+          return `<div class="flex items-start gap-2" style="color:${neg?'var(--danger)':'var(--success)'}"><i class="fa-solid fa-${neg?'minus':'plus'}-circle mt-0.5"></i><span>${line}</span></div>`;
+        }).join('') || '<div style="color:var(--muted)">No breakdown available</div>'}
+      </div>
     </div>
   `;
   dp.classList.remove('hidden');
   dp.classList.add('slide-r');
+  bindDetailTabs();
 }
 
 function closeDetail(){
   document.getElementById('detail-panel').classList.add('hidden');
   S.detailOpen=false;S.selected=null;
-  document.querySelectorAll('.lead-card').forEach(c=>c.classList.remove('selected'));
+  hoverLeadId=null;
+  highlightSelectedMarker(null);
+  syncLeadSelectionUI(null);
+  selectedParcelLayer?.clearLayers();
+  clearHoverParcel();
+  clearCesiumHover();
+  hidePovPanel();
+  renderMarkers();
 }
 
 function toggleFav(id){
@@ -782,7 +1398,7 @@ function switchView(view){
   if(vp){vp.classList.remove('hidden');vp.classList.add('fade-in');}
 
   const sidebar=document.getElementById('filter-sidebar');
-  if(view==='map'){sidebar.style.display='';renderMarkers();}
+  if(view==='map'){sidebar.style.display='';refreshMapView();}
   else{sidebar.style.display='none';}
 
   if(view==='dashboard') renderDashboard();
@@ -793,7 +1409,8 @@ function switchView(view){
 }
 
 function refreshCurrentView(){
-  if(S.view==='map') renderMarkers();
+  updateNavCounts();
+  if(S.view==='map') refreshMapView();
   if(S.view==='leads') renderLeadsView();
   if(S.view==='dashboard') renderDashboard();
   if(S.view==='analytics') renderAnalytics();
@@ -816,17 +1433,22 @@ function renderLeadsView(){
           <option value="frontage" ${S.sort==='frontage'?'selected':''}>Most frontage</option>
           <option value="yrsOwned" ${S.sort==='yrsOwned'?'selected':''}>Longest tenure</option>
           <option value="multiParcel" ${S.sort==='multiParcel'?'selected':''}>Multi-parcel</option>
+          <option value="pricePerAcre" ${S.sort==='pricePerAcre'?'selected':''}>Lowest $/acre</option>
+          <option value="ownerParcelCount" ${S.sort==='ownerParcelCount'?'selected':''}>Portfolio owners</option>
         </select>
       </div>
     </div>
-    <div class="card overflow-x-auto">
-      <table class="w-full border-collapse text-[13px]">
+    <div class="card overflow-x-auto max-h-[calc(100vh-140px)]">
+      <table class="w-full border-collapse text-[13px] table-sticky">
         <thead><tr>
           <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="score">Score <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
           <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">Parcel</th>
           <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="owner">Owner <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
           <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">County</th>
           <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="acreage">Acres <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="frontage">Frontage <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">Zoning</th>
+          <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">Utilities</th>
           <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider cursor-pointer" style="color:var(--muted);border-bottom:1px solid var(--border)" data-sort="landValue">Value <i class="fa-solid fa-sort text-[8px] ml-1"></i></th>
           <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">Phone</th>
           <th class="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider" style="color:var(--muted);border-bottom:1px solid var(--border)">Status</th>
@@ -834,15 +1456,24 @@ function renderLeadsView(){
         </tr></thead>
         <tbody>
           ${filtered.map(p=>{
-            const sc=scoreClass(p);
+            const scCol=scoreColor(p);
             const sb=p.score>=70?'badge-danger':p.score>=50?'badge-warm':p.score>=30?'badge-gold':'badge-muted';
             const stb=p.status==='Contacted'?'badge-warm':p.status==='Interested'?'badge-success':p.status==='Pass'?'badge-muted':'badge-accent';
-            return `<tr class="cursor-pointer transition-colors hover:bg-[var(--bg-el)]" onclick="selectLeadFromTable(${p.id})" style="border-bottom:1px solid var(--border)">
-              <td class="px-4 py-3"><span class="badge ${sb}">${p.score}</span></td>
+            const active=S.selected?.id===p.id?'lead-row-active':'';
+            return `<tr class="cursor-pointer transition-colors hover:bg-[var(--bg-el)] ${active}" data-id="${p.id}" onclick="selectLeadFromTable(${p.id})" style="border-bottom:1px solid var(--border)">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span class="badge ${sb}">${p.score}</span>
+                  <div class="w-10 h-1 rounded-full hidden sm:block" style="background:var(--border)"><div class="h-1 rounded-full" style="width:${p.score}%;background:${scCol}"></div></div>
+                </div>
+              </td>
               <td class="px-4 py-3 font-mono text-xs" style="color:var(--accent)">${p.parcelId}</td>
               <td class="px-4 py-3 font-medium" style="color:var(--fg)">${p.owner.length>25?p.owner.substring(0,25)+'…':p.owner}</td>
               <td class="px-4 py-3" style="color:var(--fg2)">${p.county}</td>
               <td class="px-4 py-3 font-mono">${p.acreage}</td>
+              <td class="px-4 py-3 font-mono text-xs">${p.frontage||'—'}${p.nearestRoad?`<br><span style="color:var(--muted)">${p.nearestRoad.length>14?p.nearestRoad.slice(0,14)+'…':p.nearestRoad}</span>`:''}</td>
+              <td class="px-4 py-3 text-xs">${p.zoning}<br><span style="color:var(--muted)">${p.zoningCategory||''}</span></td>
+              <td class="px-4 py-3 text-[11px]" style="color:var(--fg2)">${[p.waterAvailable?'W':null,p.sewerAvailable?'S':null,p.electricAvailable?'E':null].filter(Boolean).join('')||'—'}</td>
               <td class="px-4 py-3 font-heading font-semibold" style="color:var(--accent)">$${p.landValue.toLocaleString()}</td>
               <td class="px-4 py-3 font-mono text-xs">${p.phone||'—'}</td>
               <td class="px-4 py-3"><span class="badge ${stb}">${p.status}</span></td>
@@ -878,6 +1509,7 @@ function renderLeadsView(){
 function selectLeadFromTable(id){
   const p=prospects.find(x=>x.id===id);
   if(!p) return;
+  if(S.view!=='map') switchView('map');
   selectLead(p);
 }
 
@@ -997,25 +1629,26 @@ function renderAnalytics(){
     </div>
   `;
 
-  const baseOpts={responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(30,45,34,.3)'},ticks:{color:'#5e7268',font:{size:10}}},y:{grid:{color:'rgba(30,45,34,.3)'},ticks:{color:'#5e7268',font:{size:10}}}}};
+  const gridCol='rgba(62,58,82,.35)',tickCol=pal('muted');
+  const baseOpts={responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:gridCol},ticks:{color:tickCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:tickCol,font:{size:10}}}}};
 
   const bins=[0,0,0,0];
   filtered.forEach(p=>{if(p.score>=70)bins[0]++;else if(p.score>=50)bins[1]++;else if(p.score>=30)bins[2]++;else bins[3]++;});
-  chartInstances.push(new Chart(document.getElementById('ch-scores'),{type:'bar',data:{labels:['Elite 70+','Strong 50-69','Moderate 30-49','Low <30'],datasets:[{data:bins,backgroundColor:['#ef4444','#e8a832','#d4a64a','#5e7268'],borderRadius:6,barThickness:28}]},options:{...baseOpts,plugins:{legend:{display:false}}}}));
+  chartInstances.push(new Chart(document.getElementById('ch-scores'),{type:'bar',data:{labels:['Elite 70+','Strong 50-69','Moderate 30-49','Low <30'],datasets:[{data:bins,backgroundColor:[pal('danger'),pal('warm'),pal('gold'),pal('muted')],borderRadius:6,barThickness:28}]},options:{...baseOpts,plugins:{legend:{display:false}}}}));
 
   const cData=COUNTIES.map(c=>filtered.filter(p=>p.county===c).reduce((a,p)=>a+p.landValue,0)/1000);
-  chartInstances.push(new Chart(document.getElementById('ch-county'),{type:'bar',data:{labels:COUNTIES,datasets:[{data:cData,backgroundColor:['#00d4aa','#e8a832','#22c55e','#d4a64a'],borderRadius:6,barThickness:28}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>'$'+v+'K'}}}}}));
+  chartInstances.push(new Chart(document.getElementById('ch-county'),{type:'bar',data:{labels:COUNTIES,datasets:[{data:cData,backgroundColor:[pal('accent'),pal('gold'),pal('success'),pal('info'),pal('gold2')],borderRadius:6,barThickness:28}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>'$'+v+'K'}}}}}));
 
   const otData=OWNER_TYPES.map(t=>filtered.filter(p=>p.ownerType===t).length);
-  const otColors=['#00d4aa','#d4a64a','#b66a3d','#ef4444','#e8a832','#22c55e'];
-  chartInstances.push(new Chart(document.getElementById('ch-owner'),{type:'doughnut',data:{labels:OWNER_TYPES,datasets:[{data:otData,backgroundColor:otColors,borderWidth:0,hoverOffset:8}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#5e7268',font:{size:10},padding:10,usePointStyle:true,pointStyle:'circle'}}}}}));
+  const otColors=[pal('accent'),pal('gold'),pal('gold2'),pal('danger'),pal('warm'),pal('success')];
+  chartInstances.push(new Chart(document.getElementById('ch-owner'),{type:'doughnut',data:{labels:OWNER_TYPES,datasets:[{data:otData,backgroundColor:otColors,borderWidth:0,hoverOffset:8}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:tickCol,font:{size:10},padding:10,usePointStyle:true,pointStyle:'circle'}}}}}));
 
   const fzLabels=['None','X (minimal)','AE (high)'];
   const fzData=fzLabels.map(l=>{const m=filtered.filter(p=>p.floodZone===l);return m.length?Math.round(m.reduce((a,p)=>a+p.score,0)/m.length):0;});
-  chartInstances.push(new Chart(document.getElementById('ch-flood'),{type:'bar',data:{labels:fzLabels,datasets:[{data:fzData,backgroundColor:['#22c55e','#d4a64a','#ef4444'],borderRadius:6,barThickness:36}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,beginAtZero:true,max:100}}}}));
+  chartInstances.push(new Chart(document.getElementById('ch-flood'),{type:'bar',data:{labels:fzLabels,datasets:[{data:fzData,backgroundColor:[pal('success'),pal('gold'),pal('danger')],borderRadius:6,barThickness:36}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,beginAtZero:true,max:100}}}}));
 
   const scatter=filtered.filter(p=>p.frontage>0).slice(0,80).map(p=>({x:p.frontage,y:p.score}));
-  chartInstances.push(new Chart(document.getElementById('ch-frontage'),{type:'scatter',data:{datasets:[{data:scatter,backgroundColor:'rgba(0,212,170,.5)',pointRadius:3}]},options:{...baseOpts,scales:{x:{...baseOpts.scales.x,title:{display:true,text:'Frontage (ft)',color:'#5e7268',font:{size:10}}},y:{...baseOpts.scales.y,title:{display:true,text:'Score',color:'#5e7268',font:{size:10}},beginAtZero:true,max:100}}}}));
+  chartInstances.push(new Chart(document.getElementById('ch-frontage'),{type:'scatter',data:{datasets:[{data:scatter,backgroundColor:'rgba(217,104,71,.55)',pointRadius:3}]},options:{...baseOpts,scales:{x:{...baseOpts.scales.x,title:{display:true,text:'Frontage (ft)',color:tickCol,font:{size:10}}},y:{...baseOpts.scales.y,title:{display:true,text:'Score',color:tickCol,font:{size:10}},beginAtZero:true,max:100}}}}));
 }
 
 document.getElementById('county-chips').addEventListener('click',e=>{
@@ -1024,7 +1657,7 @@ document.getElementById('county-chips').addEventListener('click',e=>{
   const idx=S.filters.counties.indexOf(c);
   if(idx>=0){S.filters.counties.splice(idx,1);chip.classList.remove('on');}
   else{S.filters.counties.push(c);chip.classList.add('on');}
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 
 document.getElementById('owner-chips').addEventListener('click',e=>{
@@ -1033,7 +1666,7 @@ document.getElementById('owner-chips').addEventListener('click',e=>{
   const idx=S.filters.ownerTypes.indexOf(t);
   if(idx>=0){S.filters.ownerTypes.splice(idx,1);chip.classList.remove('on');}
   else{S.filters.ownerTypes.push(t);chip.classList.add('on');}
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 
 document.getElementById('quick-chips').addEventListener('click',e=>{
@@ -1044,14 +1677,14 @@ document.getElementById('quick-chips').addEventListener('click',e=>{
     document.querySelectorAll('#quick-chips .chip').forEach(c=>c.classList.remove('gold-on'));
     S.filters.quick=q;chip.classList.add('gold-on');
   }
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 
 document.getElementById('view-chips').addEventListener('click',e=>{
   const chip=e.target.closest('[data-viewf]');if(!chip) return;
   document.querySelectorAll('#view-chips .chip').forEach(c=>c.classList.remove('on'));
   S.filters.view=chip.dataset.viewf;chip.classList.add('on');
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 
 document.getElementById('flood-chips').addEventListener('click',e=>{
@@ -1062,48 +1695,74 @@ document.getElementById('flood-chips').addEventListener('click',e=>{
     document.querySelectorAll('#flood-chips .chip').forEach(c=>c.classList.remove('on'));
     S.filters.flood=f;chip.classList.add('on');
   }
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 
 document.getElementById('score-min').addEventListener('input',e=>{
   S.filters.scoreMin=+e.target.value;
   document.getElementById('score-val').textContent=e.target.value;
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 document.getElementById('val-max').addEventListener('input',e=>{
   S.filters.valMax=+e.target.value;
   document.getElementById('val-val').textContent=+e.target.value>=200000?'No limit':'$'+(+e.target.value).toLocaleString();
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 document.getElementById('front-min').addEventListener('input',e=>{
   S.filters.frontMin=+e.target.value;
   document.getElementById('front-val').textContent=e.target.value+' ft';
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 
 ['t-locked','t-phone','t-dnc','t-oos','t-absentee','t-mh','t-cluster'].forEach(id=>{
   document.getElementById(id).addEventListener('change',e=>{
     const map={'t-locked':'hideLocked','t-phone':'phoneOnly','t-dnc':'hideDnc','t-oos':'oosOnly','t-absentee':'absenteeOnly','t-mh':'mhOnly','t-cluster':'cluster'};
     S.filters[map[id]]=e.target.checked;
-    if(id==='t-cluster'){renderMarkers();}
-    else{renderMarkers();updateMapCount();}
+    refreshCurrentView();
   });
 });
 
 document.getElementById('map-mode-2d').addEventListener('click',()=>switchMapMode('2D'));
 document.getElementById('map-mode-3d').addEventListener('click',()=>switchMapMode('3D'));
+document.getElementById('pov-toggle').addEventListener('click',()=>{
+  S.povOnHover=!S.povOnHover;
+  document.getElementById('pov-toggle').classList.toggle('active',S.povOnHover);
+  if(!S.povOnHover) hidePovPanel();
+  else if(S.selected) showPovPanel(S.selected);
+  toast(S.povOnHover?'Earth POV on hover enabled':'Earth POV disabled','info');
+});
 
 document.getElementById('global-search').addEventListener('input',e=>{
   S.filters.search=e.target.value;
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
 });
 document.addEventListener('keydown',e=>{
-  if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)){
-    e.preventDefault();document.getElementById('global-search').focus();
+  const tag=document.activeElement?.tagName;
+  const typing=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openCommandPalette();return;}
+  if(e.key==='/'&&!typing){e.preventDefault();document.getElementById('global-search').focus();return;}
+  if(e.key==='?'&&!typing) showHelp();
+  if(e.key==='Escape'){
+    if(document.getElementById('modal-root').innerHTML) document.getElementById('modal-root').innerHTML='';
+    else closeDetail();
+    return;
   }
-  if(e.key==='?') showHelp();
-  if(e.key==='Escape') closeDetail();
+  if(S.detailOpen&&!typing){
+    if(e.key==='j'||e.key==='ArrowLeft'){e.preventDefault();navigateLead(-1);}
+    if(e.key==='k'||e.key==='ArrowRight'){e.preventDefault();navigateLead(1);}
+  }
 });
+
+document.getElementById('cmd-btn').addEventListener('click',openCommandPalette);
+
+document.getElementById('drawer-toggle').addEventListener('click',()=>{
+  S.drawerCollapsed=!S.drawerCollapsed;
+  document.getElementById('map-lead-drawer').classList.toggle('collapsed',S.drawerCollapsed);
+  const legend=document.getElementById('score-legend');
+  if(legend) legend.style.right=S.drawerCollapsed?'12px':'320px';
+});
+
+document.getElementById('drawer-search').addEventListener('input',()=>renderMapDrawer());
 
 document.getElementById('reset-btn').addEventListener('click',()=>{
   S.filters={search:'',quick:null,view:'all',counties:[],ownerTypes:[],scoreMin:0,valMax:200000,frontMin:0,flood:null,hideLocked:false,phoneOnly:false,hideDnc:false,oosOnly:false,absenteeOnly:false,mhOnly:false,cluster:true};
@@ -1115,7 +1774,7 @@ document.getElementById('reset-btn').addEventListener('click',()=>{
   document.querySelectorAll('.toggle input').forEach(i=>i.checked=false);
   document.getElementById('t-cluster').checked=true;
   document.getElementById('global-search').value='';
-  renderMarkers();updateMapCount();
+  refreshCurrentView();
   toast('Filters reset','info');
 });
 
@@ -1125,10 +1784,7 @@ function updateFilterUI(){
   });
 }
 
-function updateMapCount(){
-  const n=applyFilters().length;
-  document.getElementById('map-count').textContent=n+' leads shown';
-}
+function updateMapCount(){updateNavCounts();}
 
 function exportCSV(){
   const filtered=sortLeads(applyFilters());
@@ -1174,12 +1830,13 @@ function showHelp(){
           <button onclick="document.getElementById('modal-root').innerHTML=''" class="btn-ghost px-2"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="space-y-4 text-sm" style="color:var(--fg2)">
-          <div><span class="font-heading font-bold" style="color:var(--accent)">01</span> <strong style="color:var(--fg)">Map & Pins</strong><p class="mt-1">Every colored pin is a lead — color shows appeal score (red=elite, orange=strong, yellow=moderate, grey=low). Grey pins are locked inventory. Toggle Satellite/Street in the map top-right.</p></div>
-          <div><span class="font-heading font-bold" style="color:var(--accent)">02</span> <strong style="color:var(--fg)">Click Any Pin</strong><p class="mt-1">Full lead detail: owner, phone with click-to-call, mailing address, acreage, zoning, frontage, flood, value, and scoring breakdown. Mark as favorite or set status.</p></div>
-          <div><span class="font-heading font-bold" style="color:var(--accent)">03</span> <strong style="color:var(--fg)">Filter the List</strong><p class="mt-1">Left panel: quick filters, county, owner type, score/value/frontage sliders, flood zone, toggles for phone/DNC/out-of-state/absentee.</p></div>
-          <div><span class="font-heading font-bold" style="color:var(--accent)">04</span> <strong style="color:var(--fg)">Export & Share</strong><p class="mt-1">Export CSV downloads the filtered set. Share copies a URL with your current filters encoded.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--parcel)">01</span> <strong style="color:var(--fg)">Parcel perimeter on hover</strong><p class="mt-1">Hover a map pin or Lead Stack row to fetch the real county GIS boundary (ArcGIS, all 5 counties). A glowing <span style="color:var(--parcel)">teal polygon</span> outlines the parcel. Selected leads keep a <span style="color:var(--gold)">gold perimeter</span> until you close the detail panel. Click a lead to zoom the map to parcel bounds.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--accent)">02</span> <strong style="color:var(--fg)">Earth POV preview</strong><p class="mt-1">Bottom-left panel shows ground-level satellite view (Cesium + Esri). Parcel appears as a 3D extruded outline. <i class="fa-solid fa-globe"></i> opens Google Earth Web · <i class="fa-solid fa-person-walking"></i> opens Street View. Toggle <strong>POV</strong> top-left to disable the preview (perimeter hover still works).</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--accent)">03</span> <strong style="color:var(--fg)">Embedded Street View</strong><p class="mt-1">Add <code style="color:var(--parcel)">window.GOOGLE_MAPS_KEY</code> before <code>leads-data.js</code> for in-app Street View. Without a key, POV uses the Cesium ground camera.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--accent)">04</span> <strong style="color:var(--fg)">3D mode</strong><p class="mt-1">Switch to 3D and hover extruded parcels — same teal highlight and POV panel apply.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--accent)">05</span> <strong style="color:var(--fg)">Filters & export</strong><p class="mt-1">Left panel filters by county, score, frontage, flood, and more. Export CSV or share a filtered URL.</p></div>
         </div>
-        <div class="mt-4 text-[11px]" style="color:var(--muted)">Pro tips: Press <kbd>/</kbd> to search · Press <kbd>?</kbd> for this help</div>
+        <div class="mt-4 text-[11px]" style="color:var(--muted)">Pro tips: <span class="cmd-kbd">⌘K</span> command palette · <span class="cmd-kbd">/</span> search · <span class="cmd-kbd">J</span>/<span class="cmd-kbd">K</span> prev/next lead · <span class="cmd-kbd">?</span> help</div>
         <div class="flex justify-end mt-5"><button class="btn-p" onclick="document.getElementById('modal-root').innerHTML=''">Got it</button></div>
       </div>
     </div>
@@ -1193,10 +1850,27 @@ function updateClock(){
 }
 setInterval(updateClock,1000);updateClock();
 
+function animateLoader(){
+  const bar=document.getElementById('loader-bar');
+  if(!bar) return;
+  let w=0;
+  const tick=setInterval(()=>{
+    w=Math.min(92,w+Math.random()*18);
+    bar.style.width=w+'%';
+  },120);
+  return tick;
+}
+
 window.addEventListener('load',async ()=>{
+  const loaderTick=animateLoader();
   await loadRealLeads();
   initMap();
   updateFilterUI();
+  updateNavCounts();
+  renderMapDrawer();
+  const bar=document.getElementById('loader-bar');
+  if(bar) bar.style.width='100%';
+  clearInterval(loaderTick);
   setTimeout(()=>{
     document.getElementById('loader').style.opacity='0';
     document.getElementById('app').style.opacity='1';
@@ -1205,7 +1879,7 @@ window.addEventListener('load',async ()=>{
       setTimeout(showHelp,800);
       localStorage.setItem('sg-seen','1');
     }
-  },600);
+  },400);
 });
 </script>
 </body>
