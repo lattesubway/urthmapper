@@ -688,9 +688,10 @@ function openDetailPanel(p){
     <p class="text-xs mb-4" style="color:var(--muted)">${p.parcelId} · ${p.ownerType}</p>
 
     <div class="space-y-2.5 text-[13px]">
-      <div class="flex justify-between"><span style="color:var(--muted)">Address</span><span class="text-right">${p.address}, ${p.city}, FL</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Situs</span><span class="text-right">${p.situsAddress||`${p.address}, ${p.city}, FL`}</span></div>
+      <div class="flex justify-between"><span style="color:var(--muted)">Mailing</span><span class="text-right">${p.mailingAddress||p.mailState||'—'}${p.isOOS?' (OOS)':p.isAbsentee?' (Absentee)':''}</span></div>
       <div class="flex justify-between"><span style="color:var(--muted)">County</span><span>${p.county}</span></div>
-      <div class="flex justify-between"><span style="color:var(--muted)">Mailing</span><span class="text-right">${p.mailState}${p.isOOS?' (Out-of-state)':''}</span></div>
+      ${p.waterFeatures?.length?`<div class="flex justify-between"><span style="color:var(--muted)">Water</span><span class="text-right text-xs" style="max-width:58%">${p.waterFeatures.join(', ')}${p.waterFeatureSources?.length?`<br><span style="color:var(--muted)">via ${p.waterFeatureSources.join(', ')}</span>`:''}</span></div>`:''}
       <div class="flex justify-between"><span style="color:var(--muted)">Acreage</span><span class="font-mono">${p.acreage} ac</span></div>
       <div class="flex justify-between"><span style="color:var(--muted)">Zoning</span><span class="badge badge-accent">${p.zoning}</span></div>
       <div class="flex justify-between"><span style="color:var(--muted)">Frontage</span><span class="font-mono">${p.frontage} ft</span></div>
@@ -699,7 +700,8 @@ function openDetailPanel(p){
       <div class="flex justify-between"><span style="color:var(--muted)">Total appraisal</span><span>$${p.appraisalTotal.toLocaleString()}</span></div>
       <div class="flex justify-between"><span style="color:var(--muted)">Years owned</span><span>${p.yrsOwned} yrs</span></div>
       <div class="flex justify-between"><span style="color:var(--muted)">Multi-parcel</span><span>${p.multiParcel>1?p.multiParcel+' parcels':'Single'}</span></div>
-      ${p.phone?`<div class="flex justify-between"><span style="color:var(--muted)">Phone</span><a href="tel:${p.phone}" class="font-mono" style="color:var(--accent)">${p.phone}</a></div>`:''}
+      ${p.phone?`<div class="flex justify-between"><span style="color:var(--muted)">Phone</span><a href="tel:${p.phone}" class="font-mono" style="color:var(--accent)">${p.phone}</a>${p.skiptraceSource?` <span class="text-[10px]" style="color:var(--muted)">(${p.skiptraceSource})</span>`:''}</div>`:''}
+      ${p.email?`<div class="flex justify-between"><span style="color:var(--muted)">Email</span><a href="mailto:${p.email}" class="font-mono text-xs" style="color:var(--accent)">${p.email}</a></div>`:''}
       ${p.isDNC?'<div class="text-[10px] px-2 py-1 rounded" style="background:var(--danger-dim);color:var(--danger)"><i class="fa-solid fa-ban mr-1"></i>DNC — Do Not Call</div>':''}
     </div>
 
