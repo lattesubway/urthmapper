@@ -1,0 +1,19 @@
+{
+  "name": "urthmapper",
+  "version": "1.1.0",
+  "description": "Vacant land lead pipeline for Clearwater FL and surrounding counties",
+  "type": "commonjs",
+  "scripts": {
+    "scrape": "node scrape-leads.js",
+    "scrape:export": "node scrape-leads.js --export-app",
+    "enrich:water": "node enrich-water.js --export-app",
+    "skiptrace": "node skiptrace-leads.js --export-app",
+    "serve": "npx serve -l 8888 ."
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "undici": "^8.5.0"
+  }
+}
