@@ -34,12 +34,15 @@ function scoreLead(lead) {
     breakdown.push('Absentee owner (+10)');
   }
 
-  if (['Heirs', 'Estate', 'Trust'].includes(lead.ownerType)) {
-    score += 10;
-    breakdown.push(`${lead.ownerType} owner (+10)`);
+  if (lead.ownerType === 'Individual') {
+    score += 18;
+    breakdown.push('Individual owner (+18)');
+  } else if (['Heirs', 'Estate', 'Trust'].includes(lead.ownerType)) {
+    score += 12;
+    breakdown.push(`${lead.ownerType} owner (+12)`);
   } else if (lead.ownerType === 'LLC' || lead.ownerType === 'Corporate') {
-    score += 6;
-    breakdown.push(`${lead.ownerType} owner (+6)`);
+    score += 5;
+    breakdown.push(`${lead.ownerType} owner (+5)`);
   }
 
   if (lead.hasUtilities && lead.utilities.length >= 2) {
@@ -170,6 +173,8 @@ function scoreLead(lead) {
 }
 
 function passesInvestorFilters(lead, filters) {
+  if (!lead.owner || !String(lead.owner).trim()) return false;
+  if (!(lead.acreage > 0)) return false;
   if (lead.landValue < filters.minLandValue || lead.landValue > filters.maxLandValue) return false;
   if (lead.acreage < filters.minAcres || lead.acreage > filters.maxAcres) return false;
   if (filters.requireMotivatedOwner && !lead.isOOS && !lead.isAbsentee && !['LLC', 'Trust', 'Estate', 'Heirs', 'Corporate'].includes(lead.ownerType)) {
