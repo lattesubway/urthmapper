@@ -22,14 +22,15 @@ const { queryAllFeatures } = require('./scraper/arcgis-client');
 const { COUNTY_SOURCES } = require('./scraper/counties');
 const { createSkiptraceProvider, enrichParcel } = require('./scraper/enrichment');
 const { scoreLead, passesInvestorFilters } = require('./scraper/scoring');
+const { writeGeoJSON, writeCSV, writeSummary, esriGeometryToGeoJSON } = require('./scraper/exporters');
 
 const DEFAULT_FILTERS = {
-  minLandValue: 5000,
-  maxLandValue: 250000,
-  minAcres: 0.15,
-  maxAcres: 20,
-  minScore: 35,
-  requireMotivatedOwner: true
+  minLandValue: 1000,
+  maxLandValue: 1000000,
+  minAcres: 0.05,
+  maxAcres: 100,
+  minScore: 0,
+  requireMotivatedOwner: false
 };
 
 function parseArgs(argv) {
@@ -42,7 +43,10 @@ function parseArgs(argv) {
     enrichFlood: true,
     enrichWater: true,
     minScore: DEFAULT_FILTERS.minScore,
-    allOwners: false
+    allOwners: true,
+    geojson: false,
+    csv: false,
+    summary: false
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -65,6 +69,19 @@ function parseArgs(argv) {
       options.enrichWater = false;
     } else if (arg === '--all-owners') {
       options.allOwners = true;
+    } else if (arg === '--motivated-only') {
+      options.allOwners = false;
+    } else if (arg === '--geojson') {
+      options.geojson = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : true;
+    } else if (arg === '--csv') {
+      options.csv = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : true;
+    } else if (arg === '--summary') {
+      options.summary = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : true;
+    } else if (arg === '--all-exports') {
+      options.geojson = true;
+      options.csv = true;
+      options.summary = true;
+      options.exportApp = true;
     } else if (arg === '--help') {
       printHelp();
       process.exit(0);
@@ -84,8 +101,13 @@ Options:
   --min-score N       Minimum investor score to keep (default: 35)
   --output FILE       JSON output path (default: clearwater-leads.json)
   --export-app        Also write leads-data.js for the map UI
+  --geojson [FILE]    Write a GeoJSON FeatureCollection (parcel polygons + Point fallback)
+  --csv [FILE]        Write a flat CSV for CRM import
+  --summary [FILE]    Write a summary (.md or .json) with run stats
+  --all-exports       Shortcut: --export-app --geojson --csv --summary
   --skiptrace         Enrich with CONTACT_PROVIDER + CONTACT_API_KEY
-  --all-owners        Include local owners (default: motivated/absentee/OOS/entity)
+  --all-owners        Include all owners with acreage (default; relaxed criteria)
+  --motivated-only    Restrict to absentee/OOS/entity owners only
   --no-flood          Skip FEMA flood zone lookups
   --no-water          Skip OSM water feature lookups
 
@@ -165,7 +187,11 @@ function toAppLead(parcel, id) {
 
     acreage: Math.round((parcel.acreage || 0) * 100) / 100,
     zoning: parcel.zoning || 'Unknown',
+    landUseLabel: parcel.landUseLabel || null,
+    zoningSource: parcel.zoningSource || null,
     frontage: Math.round(parcel.frontage || 0),
+    frontageSource: parcel.frontageSource || null,
+    roadFrontage: parcel.roadFrontage || null,
     floodZone: parcel.floodZone || 'Unknown',
     waterFeatures: parcel.waterFeatures || [],
     waterFeatureSources: parcel.waterFeatureSources || [],
@@ -179,12 +205,47 @@ function toAppLead(parcel, id) {
 
     hasUtilities: parcel.hasUtilities || false,
     utilities: parcel.utilities || [],
+    waterProvider: parcel.waterProvider || null,
+    sewerProvider: parcel.sewerProvider || null,
+    electricProvider: parcel.electricProvider || null,
+    utilitySource: parcel.utilitySource || null,
+    sewerType: parcel.sewerType || null,
+    waterType: parcel.waterType || null,
     hasLiens: parcel.hasLiens || false,
     hasTaxDelinquency: parcel.hasTaxDelinquency || false,
     roadAccess: parcel.roadAccess || 'Unknown',
 
     yrsOwned: parcel.yrsOwned || 0,
-    multiParcel: parcel.multiParcel || 1,
+    multiParcel: parcel.multiParcel || parcel.ownerParcelCount || 1,
+    ownerParcelCount: parcel.ownerParcelCount || 1,
+    isPortfolioOwner: parcel.isPortfolioOwner || false,
+    pricePerAcre: parcel.pricePerAcre || null,
+    lotDepthFt: parcel.lotDepthFt || null,
+    estSubdivisionLots: parcel.estSubdivisionLots || 0,
+    buildableAcres: parcel.buildableAcres || null,
+    estAnnualTax: parcel.estAnnualTax || null,
+    wholesaleOfferEst: parcel.wholesaleOfferEst || null,
+    equityVsSalePct: parcel.equityVsSalePct || null,
+    elevationFt: parcel.elevationFt || null,
+    nearestRoad: parcel.nearestRoad || null,
+    distToHighwayMi: parcel.distToHighwayMi || null,
+    highwayName: parcel.highwayName || null,
+    distHospitalMi: parcel.distHospitalMi || null,
+    distSchoolMi: parcel.distSchoolMi || null,
+    distGroceryMi: parcel.distGroceryMi || null,
+    distBeachMi: parcel.distBeachMi || null,
+    zoningCategory: parcel.zoningCategory || null,
+    zoningDescription: parcel.zoningDescription || null,
+    allowsMobileHome: parcel.allowsMobileHome || false,
+    sewerAvailable: parcel.sewerAvailable || false,
+    waterAvailable: parcel.waterAvailable || false,
+    electricAvailable: parcel.electricAvailable || false,
+    broadbandLikely: parcel.broadbandLikely || false,
+    hasWetlandsNearby: parcel.hasWetlandsNearby || false,
+    inSFHA: parcel.inSFHA || false,
+    developmentPotential: parcel.developmentPotential || null,
+    investorSignals: parcel.investorSignals || [],
+    riskFlags: parcel.riskFlags || [],
     dorCode: parcel.dorCode || '',
     landUseDescription: parcel.landUseDescription || '',
     saleDate: parcel.saleDate || null,
@@ -197,6 +258,7 @@ function toAppLead(parcel, id) {
     favorite: false,
     lat: parcel.lat,
     lng: parcel.lng,
+    geometry: esriGeometryToGeoJSON(parcel.geometry),
     dataSource: parcel.sourceLayer,
     scrapedAt: new Date().toISOString()
   };
@@ -321,6 +383,29 @@ async function main() {
   saveJson(leads, path.resolve(options.output));
   if (options.exportApp) exportForApp(leads);
 
+  const baseName = options.output.replace(/\.json$/i, '');
+  const resolveExport = (value, fallback) =>
+    path.resolve(typeof value === 'string' ? value : fallback);
+
+  if (options.geojson) {
+    const geometryByParcel = new Map(enriched.map((p) => [p.parcelId, p.geometry]));
+    const target = resolveExport(options.geojson, `${baseName}.geojson`);
+    const count = writeGeoJSON(leads, geometryByParcel, target);
+    console.log(`✅ Wrote ${count} features → ${target}`);
+  }
+
+  if (options.csv) {
+    const target = resolveExport(options.csv, `${baseName}.csv`);
+    writeCSV(leads, target);
+    console.log(`✅ Wrote ${leads.length} rows → ${target}`);
+  }
+
+  if (options.summary) {
+    const target = resolveExport(options.summary, `${baseName}-summary.md`);
+    writeSummary(leads, target);
+    console.log(`✅ Wrote summary → ${target}`);
+  }
+
   console.log('\nNext: refresh http://localhost:8888 or run with --export-app');
 }
 
@@ -331,4 +416,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { main, fetchCountyParcels, toAppLead };
+module.exports = { main, fetchCountyParcels, toAppLead, exportForApp };

@@ -27,6 +27,14 @@ function classifyOwnerType(name = '') {
   return 'Individual';
 }
 
+function buildSitusStreet(num, addr) {
+  const n = num == null ? '' : String(num).trim();
+  const a = (addr || '').trim();
+  if (!a) return n;
+  if (!n) return a;
+  return a.split(/\s+/)[0] === n ? a : `${n} ${a}`;
+}
+
 function buildMailing(attrs) {
   return {
     line1: attrs.line1 || '',
@@ -57,7 +65,7 @@ const COUNTY_SOURCES = {
     parseFeature(feature) {
       const a = feature.attributes;
       const owner = [a.OWNER1, a.OWNER2].filter(Boolean).join(' ').trim();
-      const situsStreet = [a.SITE_NUM, a.SITE_ADDRESS].filter(Boolean).join(' ').trim();
+      const situsStreet = buildSitusStreet(a.SITE_NUM, a.SITE_ADDRESS);
       return {
         county: 'Pinellas',
         parcelId: a.PARCELID_DSP1 || a.PARCELID || a.STRAP,
@@ -191,6 +199,7 @@ const COUNTY_SOURCES = {
         marketValue: Number(a.VAL_APPR) || Number(a.VAL_LAND) || 0,
         zoning: a.DIR_CLASS || 'Unknown',
         dorCode: a.DIR_CLASS || '',
+        landUseCode: a.DIR_CLASS || '',
         landUseDescription: a.SUBSIDENCE_CODE || '',
         frontage: Number(a['shape.STLength()']) ? Math.round(Number(a['shape.STLength()']) / 4) : 0,
         saleDate: a.SALE_YEAR ? new Date(a.SALE_YEAR, (a.SALE_MON || 1) - 1, a.SALE_DAY || 1).toISOString() : null,
@@ -257,6 +266,9 @@ const COUNTY_SOURCES = {
         saleDate: a.SALE_DATE_LQ || a.SALE_DATE_LAST || null,
         salePrice: Number(a.SALE_PRICE_LQ || a.SALE_PRICE_LAST) || null,
         utilities,
+        sewerProvider: a.NAV_SEWER_NAME || null,
+        waterProvider: a.NAV_WATER_NAME || null,
+        electricProvider: a.NAV_LIGHT_NAME || null,
         geometry: feature.geometry,
         sourceLayer: 'manatee-parcel-search'
       };
