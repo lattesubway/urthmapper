@@ -9,6 +9,9 @@
     "enrich:water": "node enrich-water.js --export-app",
     "enrich:investor": "node enrich-investor.js --export-app",
     "skiptrace": "node skiptrace-leads.js --export-app",
+    "skiptrace:all": "node skiptrace-leads.js --export-app",
+    "skiptrace:force": "node skiptrace-leads.js --export-app --force",
+    "export:csv": "node export-leads-csv.js",
     "serve": "npx serve -l 8888 ."
   },
   "engines": {
