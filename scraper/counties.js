@@ -27,6 +27,14 @@ function classifyOwnerType(name = '') {
   return 'Individual';
 }
 
+function buildSitusStreet(num, addr) {
+  const n = num == null ? '' : String(num).trim();
+  const a = (addr || '').trim();
+  if (!a) return n;
+  if (!n) return a;
+  return a.split(/\s+/)[0] === n ? a : `${n} ${a}`;
+}
+
 function buildMailing(attrs) {
   return {
     line1: attrs.line1 || '',
@@ -57,7 +65,7 @@ const COUNTY_SOURCES = {
     parseFeature(feature) {
       const a = feature.attributes;
       const owner = [a.OWNER1, a.OWNER2].filter(Boolean).join(' ').trim();
-      const situsStreet = [a.SITE_NUM, a.SITE_ADDRESS].filter(Boolean).join(' ').trim();
+      const situsStreet = buildSitusStreet(a.SITE_NUM, a.SITE_ADDRESS);
       return {
         county: 'Pinellas',
         parcelId: a.PARCELID_DSP1 || a.PARCELID || a.STRAP,
