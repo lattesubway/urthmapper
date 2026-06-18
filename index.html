@@ -18,9 +18,6 @@ tailwind.config={theme:{extend:{fontFamily:{heading:['Syne','sans-serif'],body:[
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/cesium@1.124/Build/Cesium/Widgets/widgets.css">
-<script>window.CESIUM_BASE_URL='https://unpkg.com/cesium@1.124/Build/Cesium/';</script>
-<script src="https://unpkg.com/cesium@1.124/Build/Cesium/Cesium.js"></script>
 <script src="leads-data.js"></script>
 <!-- Optional: embedded Google Street View in POV panel -->
 <!-- <script>window.GOOGLE_MAPS_KEY='YOUR_API_KEY';</script> -->
@@ -473,7 +470,10 @@ async function loadRealLeads(){
 
   if(loaded.length === 0){
     try {
-      const response = await fetch('clearwater-leads.json', { cache: 'no-cache' });
+      const controller=new AbortController();
+      const timeoutId=setTimeout(()=>controller.abort(),5000);
+      const response = await fetch('clearwater-leads.json', { cache: 'no-cache', signal: controller.signal });
+      clearTimeout(timeoutId);
       if(!response.ok) throw new Error(`HTTP ${response.status}`);
       const json = await response.json();
       if(Array.isArray(json) && json.length){
@@ -512,7 +512,10 @@ async function fetchParcelBoundary(lead){
     url.searchParams.set('returnGeometry','true');
     url.searchParams.set('f','geojson');
 
-    const response=await fetch(url.toString(),{cache:'no-cache'});
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),5000);
+    const response=await fetch(url.toString(),{cache:'no-cache',signal:controller.signal});
+    clearTimeout(timeoutId);
     if(!response.ok) throw new Error(`HTTP ${response.status}`);
     const geojson=await response.json();
     if(Array.isArray(geojson.features)&&geojson.features.length){
@@ -523,7 +526,9 @@ async function fetchParcelBoundary(lead){
       return feature.geometry;
     }
   }catch(error){
-    console.warn(`Parcel boundary fetch failed for ${lead.parcelId}:`,error.message);
+    if(error.name!=='AbortError'){
+      console.warn(`Parcel boundary fetch failed for ${lead.parcelId}:`,error.message);
+    }
   }
   return null;
 }
@@ -1054,8 +1059,7 @@ function initMap(){
   selectedParcelLayer=L.layerGroup().addTo(map);
   hoverLoadingLayer=L.layerGroup().addTo(map);
   map.addLayer(clusterGroup);
-  init3DViewer();
-  switchMapMode('3D');
+  switchMapMode('2D');
   renderMarkers();
 
   map.on('mousemove',e=>{
@@ -1065,8 +1069,22 @@ function initMap(){
 
 let cesiumViewer;
 
-function init3DViewer(){
-  if(typeof Cesium==='undefined') return;
+async function init3DViewer(){
+  if(cesiumViewer||typeof Cesium==='undefined') return;
+  if(!window.Cesium){
+    const link=document.createElement('link');
+    link.rel='stylesheet';
+    link.href='https://unpkg.com/cesium@1.124/Build/Cesium/Widgets/widgets.css';
+    document.head.appendChild(link);
+    window.CESIUM_BASE_URL='https://unpkg.com/cesium@1.124/Build/Cesium/';
+    await new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='https://unpkg.com/cesium@1.124/Build/Cesium/Cesium.js';
+      script.onload=resolve;
+      script.onerror=reject;
+      document.head.appendChild(script);
+    });
+  }
   cesiumViewer=new Cesium.Viewer('cesiumContainer',{
     baseLayer:false,
     terrainProvider:new Cesium.EllipsoidTerrainProvider(),
@@ -1300,6 +1318,7 @@ function switchMapMode(mode){
   const mapEl=document.getElementById('map');
   const cesiumEl=document.getElementById('cesiumContainer');
   if(mode==='3D'){
+    if(!cesiumViewer) init3DViewer();
     mapEl.classList.add('hidden');
     mapEl.style.display='none';
     cesiumEl.classList.remove('hidden');
@@ -2024,7 +2043,7 @@ function animateLoader(){
   return tick;
 }
 
-window.addEventListener('load',async ()=>{
+window.addEventListener('DOMContentLoaded',async ()=>{
   const loaderTick=animateLoader();
   await loadRealLeads();
   initMap();
