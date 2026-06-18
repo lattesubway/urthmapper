@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0d14">
+<title>Urthmapper — Land Lead Console</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{heading:['Syne','sans-serif'],body:['DM Sans','sans-serif'],mono:['IBM Plex Mono','monospace']}}}}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="leads-data.js"></script>
+<!-- Optional: embedded Google Street View in POV panel -->
+<!-- <script>window.GOOGLE_MAPS_KEY='YOUR_API_KEY';</script> -->
+<style>
+:root{
+  --bg:#0b0d14;--bg-card:rgba(17,19,30,.88);--bg-el:#1c1f2e;--bg-hover:#262a3d;
+  --fg:#ede8df;--fg2:#9d99ad;--muted:#646078;
+  --accent:#d96847;--accent-dim:rgba(217,104,71,.14);--accent-glow:rgba(217,104,71,.38);
+  --gold:#c9a227;--gold-dim:rgba(201,162,39,.14);--gold2:#9e4b2f;
+  --danger:#f25f5c;--danger-dim:rgba(242,95,92,.14);
+  --success:#5da87a;--success-dim:rgba(93,168,122,.14);
+  --warm:#e8954f;--warm-dim:rgba(232,149,79,.14);
+  --info:#6eb5d4;--info-dim:rgba(110,181,212,.14);
+  --parcel:#2ec4b6;--parcel-dim:rgba(46,196,182,.14);--parcel-glow:rgba(46,196,182,.72);
+  --border:rgba(42,40,58,.92);--border-lt:rgba(62,58,82,.95);
+  --surface-overlay:rgba(14,16,26,.9);--shadow-glow:rgba(217,104,71,.22);
+  --glass:blur(14px) saturate(1.15);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:'DM Sans',sans-serif;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 15% -10%,rgba(217,104,71,.09),transparent 55%),
+    radial-gradient(ellipse 55% 45% at 92% 8%,rgba(110,181,212,.07),transparent 50%),
+    radial-gradient(ellipse 40% 30% at 50% 100%,rgba(158,75,47,.06),transparent 55%),
+    linear-gradient(rgba(110,181,212,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(110,181,212,.025) 1px,transparent 1px);
+  background-size:auto,auto,auto,52px 52px,52px 52px;opacity:.95}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;letter-spacing:-.02em}
+#app{position:relative;z-index:1}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg-card)}
+::-webkit-scrollbar-thumb{background:var(--border-lt);border-radius:3px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideR{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-up{animation:fadeUp .4s ease both}
+.fade-in{animation:fadeIn .3s ease both}
+.slide-r{animation:slideR .3s ease both}
+
+.card{background:var(--bg-card);backdrop-filter:var(--glass);border:1px solid var(--border);border-radius:var(--radius);transition:transform .2s,border-color .2s,box-shadow .2s}
+.card:hover{border-color:var(--border-lt);box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.glass{background:var(--bg-card);backdrop-filter:var(--glass);border:1px solid var(--border)}
+
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
+.badge-accent{background:var(--accent-dim);color:var(--accent)}
+.badge-gold{background:var(--gold-dim);color:var(--gold)}
+.badge-da
