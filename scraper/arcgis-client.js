@@ -16,7 +16,8 @@ async function queryFeatures({
   resultRecordCount = DEFAULT_PAGE_SIZE,
   returnGeometry = true,
   outSR = 4326,
-  orderByFields = null
+  orderByFields = null,
+  timeout = 10000
 }) {
   const params = new URLSearchParams({
     where,
@@ -42,17 +43,29 @@ async function queryFeatures({
     params.set('orderByFields', orderByFields);
   }
 
-  const response = await fetch(`${url}?${params}`);
-  if (!response.ok) {
-    throw new Error(`ArcGIS HTTP ${response.status} for ${url}`);
-  }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(data.error.message || JSON.stringify(data.error));
-  }
+  try {
+    const response = await fetch(`${url}?${params}`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      throw new Error(`ArcGIS HTTP ${response.status} for ${url}`);
+    }
 
-  return data;
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(data.error.message || JSON.stringify(data.error));
+    }
+
+    return data;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`ArcGIS query timeout (${timeout}ms) for ${url}`);
+    }
+    throw error;
+  }
 }
 
 async function queryAllFeatures(options, { maxRecords = 5000, pageSize = DEFAULT_PAGE_SIZE, delayMs = 200 } = {}) {
