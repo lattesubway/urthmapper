@@ -65,12 +65,15 @@ class ReishubProvider {
 }
 
 function createSkiptraceProvider() {
-  const provider = (process.env.CONTACT_PROVIDER || process.env.SKIPTRACE_PROVIDER || '').toLowerCase();
   const apiKey =
     process.env.SPOKEO_API_KEY ||
     process.env.CONTACT_API_KEY ||
     process.env.SPOKEO_KEY ||
     null;
+
+  let provider = (process.env.CONTACT_PROVIDER || process.env.SKIPTRACE_PROVIDER || '').toLowerCase();
+  if (!provider && process.env.SPOKEO_API_KEY) provider = 'spokeo';
+  if (!provider && process.env.CONTACT_API_KEY) provider = 'reishub';
 
   if (!apiKey) return null;
 
