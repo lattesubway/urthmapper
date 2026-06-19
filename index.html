@@ -358,6 +358,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     <button id="map-mode-2d" class="mode-btn active" type="button">2D</button>
     <button id="map-mode-3d" class="mode-btn" type="button">3D</button>
     <button id="pov-toggle" class="mode-btn active" type="button" title="Earth POV on hover"><i class="fa-solid fa-street-view mr-1"></i>POV</button>
+    <button id="heat-toggle" class="mode-btn" type="button" title="Lead-value density heatmap"><i class="fa-solid fa-fire mr-1"></i>Heat</button>
   </div>
   <div id="pov-panel" class="pov-panel glass">
     <div class="pov-panel-header">
@@ -660,6 +661,7 @@ function refreshMapView(){
   renderMarkers();
   renderMapDrawer();
   updateSelectedParcel(S.selected);
+  if(heatState.on) renderHeatmap();
 }
 
 function highlightSelectedMarker(p){
@@ -1085,8 +1087,8 @@ function initMap(){
 let cesiumViewer;
 
 async function init3DViewer(){
-  if(cesiumViewer||typeof Cesium==='undefined') return;
-  if(!window.Cesium){
+  if(cesiumViewer) return;            // already initialized — bail
+  if(typeof Cesium==='undefined' && !window.Cesium){   // not loaded yet — lazy-load it
     const link=document.createElement('link');
     link.rel='stylesheet';
     link.href='https://unpkg.com/cesium@1.124/Build/Cesium/Widgets/widgets.css';
@@ -1108,6 +1110,19 @@ async function init3DViewer(){
   });
   cesiumViewer.imageryLayers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',maximumLevel:19,credit:new Cesium.Credit('Esri World Imagery')}));
   cesiumViewer.scene.globe.enableLighting=true;
+  // Photorealistic elevation via Cesium Ion (optional, free token at ion.cesium.com).
+  // Add once, before the leads-data.js include, a small inline script that sets
+  // window.CESIUM_ION_TOKEN = 'your_token'.  With no token the globe stays on the
+  // flat ellipsoid — still fully functional, just no terrain relief.
+  if(window.CESIUM_ION_TOKEN){
+    try{
+      Cesium.Ion.defaultAccessToken=window.CESIUM_ION_TOKEN;
+      const terrain=Cesium.Terrain.fromWorldTerrain({requestVertexNormals:true});
+      cesiumViewer.scene.setTerrain(terrain);
+      terrain.readyEvent.addEventListener(()=>{cesiumViewer.scene.globe.depthTestAgainstTerrain=true;});
+      terrain.errorEvent.addEventListener(e=>console.warn('World terrain unavailable, using ellipsoid:',e));
+    }catch(e){console.warn('Ion terrain init failed, using ellipsoid:',e);}
+  }
   cesiumViewer.scene.camera.setView({destination:Cesium.Cartesian3.fromDegrees(-82.76,27.97,130000),orientation:{heading:Cesium.Math.toRadians(20),pitch:Cesium.Math.toRadians(-45),roll:0}});
 
   const handler=new Cesium.ScreenSpaceEventHandler(cesiumViewer.scene.canvas);
@@ -1140,6 +1155,11 @@ async function init3DViewer(){
       onLeadHoverEnd(lead);
     }
   },Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+  // First-entry render: switchMapMode kicks off init3DViewer without awaiting it,
+  // so it can't render itself. Do the initial draw here once the viewer exists.
+  render3DParcels();
+  preloadGeometriesFor3D();
 }
 
 async function preloadGeometriesFor3D(){
@@ -1148,8 +1168,48 @@ async function preloadGeometriesFor3D(){
   if(S.mapMode==='3D') render3DParcels();
 }
 
+let blimpEntities=[];
+// Floating labeled callouts ("blimps") anchored to each lead's centroid.
+// Anchored to lat/lng (not full polygon geometry) so every mappable lead gets one,
+// even the ~500 without a loaded parcel ring. Scale/fade with camera distance.
+function render3DBlimps(){
+  if(!cesiumViewer) return;
+  blimpEntities.forEach(e=>cesiumViewer.entities.remove(e));
+  blimpEntities=[];
+  const leads=applyFilters().filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+  leads.forEach(p=>{
+    const color=Cesium.Color.fromCssColorString(scoreHex(p));
+    const val=(p.landValue||p.landValue===0)?'$'+Math.round((p.landValue||0)/1000)+'k':'—';
+    const name=(p.owner||'Unknown').split(' ').slice(0,2).join(' ');
+    const ent=cesiumViewer.entities.add({
+      position:Cesium.Cartesian3.fromDegrees(p.lng,p.lat,150),
+      point:{
+        pixelSize:9,color,outlineColor:Cesium.Color.WHITE.withAlpha(.85),outlineWidth:2,
+        scaleByDistance:new Cesium.NearFarScalar(2000,1.5,140000,0.4),
+        disableDepthTestDistance:Number.POSITIVE_INFINITY
+      },
+      label:{
+        text:`${name}\n${val} · ${p.score}`,
+        font:'600 12px "DM Sans",sans-serif',
+        fillColor:Cesium.Color.WHITE,
+        showBackground:true,
+        backgroundColor:Cesium.Color.fromCssColorString('#11131e').withAlpha(.86),
+        backgroundPadding:new Cesium.Cartesian2(9,6),
+        verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+        pixelOffset:new Cesium.Cartesian2(0,-12),
+        scaleByDistance:new Cesium.NearFarScalar(3000,1.0,140000,0.55),
+        translucencyByDistance:new Cesium.NearFarScalar(90000,1.0,260000,0.0),
+        disableDepthTestDistance:Number.POSITIVE_INFINITY
+      }
+    });
+    ent.leadId=p.id;
+    blimpEntities.push(ent);
+  });
+}
+
 function render3DParcels(){
   if(!cesiumViewer) return;
+  render3DBlimps();                 // blimps first — they show even with no polygon geometry
   cesiumViewer.dataSources.removeAll();
   const features=applyFilters().map(p=>{
     const geometry=esriRingsToGeoJSON(p.geometry);
@@ -1186,6 +1246,90 @@ function render3DParcels(){
 }
 
 let popupLeadId=null;
+
+// ---- Lead-value density heatmap (works in both 2D Leaflet and 3D Cesium) ----
+let heatState={on:false,leafletLayer:null,cesiumLayer:null};
+
+function buildHeatmapCanvas(){
+  const pts=applyFilters().filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+  if(pts.length<2) return null;
+  let w=Infinity,s=Infinity,e=-Infinity,n=-Infinity;
+  pts.forEach(p=>{w=Math.min(w,p.lng);e=Math.max(e,p.lng);s=Math.min(s,p.lat);n=Math.max(n,p.lat);});
+  const padX=(e-w)*0.08||0.02, padY=(n-s)*0.08||0.02;
+  w-=padX;e+=padX;s-=padY;n+=padY;
+  const aspect=((n-s)/(e-w))||0.5;            // geographic height/width
+  const MAX=1536;
+  let W,H;
+  if(aspect>=1){H=MAX;W=Math.max(256,Math.round(MAX/aspect));}
+  else{W=MAX;H=Math.max(256,Math.round(MAX*aspect));}
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  const weight=p=>(p.landValue||p.score*1000||1);
+  const maxVal=Math.max(...pts.map(weight));
+  const x=lng=>((lng-w)/(e-w))*W, y=lat=>(1-(lat-s)/(n-s))*H;
+  const radius=Math.max(20,Math.min(W,H)*0.04);
+  // 1) accumulate intensity as alpha using additive compositing
+  ctx.globalCompositeOperation='lighter';
+  pts.forEach(p=>{
+    const wgt=Math.min(1,Math.max(0.18,weight(p)/maxVal));
+    const gx=x(p.lng),gy=y(p.lat);
+    const g=ctx.createRadialGradient(gx,gy,0,gx,gy,radius);
+    g.addColorStop(0,`rgba(0,0,0,${0.9*wgt})`);
+    g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(gx,gy,radius,0,Math.PI*2);ctx.fill();
+  });
+  // 2) colorize intensity via a cold→hot lookup table
+  const lut=(()=>{
+    const c=document.createElement('canvas');c.width=256;c.height=1;const cx=c.getContext('2d');
+    const gr=cx.createLinearGradient(0,0,256,0);
+    gr.addColorStop(0.00,'rgba(46,134,222,0)');
+    gr.addColorStop(0.30,'rgba(46,196,182,0.75)');
+    gr.addColorStop(0.55,'rgba(201,162,39,0.85)');
+    gr.addColorStop(0.78,'rgba(232,149,79,0.92)');
+    gr.addColorStop(1.00,'rgba(242,95,92,0.98)');
+    cx.fillStyle=gr;cx.fillRect(0,0,256,1);
+    return cx.getImageData(0,0,256,1).data;
+  })();
+  const img=ctx.getImageData(0,0,W,H), d=img.data;
+  for(let i=0;i<d.length;i+=4){
+    const a=d[i+3]; if(a===0) continue;
+    const idx=Math.min(255,a)*4;
+    d[i]=lut[idx];d[i+1]=lut[idx+1];d[i+2]=lut[idx+2];d[i+3]=lut[idx+3];
+  }
+  ctx.putImageData(img,0,0);
+  return {url:cv.toDataURL('image/png'),bounds:{w,s,e,n}};
+}
+
+function clearHeatmap(){
+  if(heatState.leafletLayer&&map){map.removeLayer(heatState.leafletLayer);heatState.leafletLayer=null;}
+  if(heatState.cesiumLayer&&cesiumViewer){try{cesiumViewer.imageryLayers.remove(heatState.cesiumLayer,true);}catch(e){}heatState.cesiumLayer=null;}
+}
+
+async function renderHeatmap(){
+  clearHeatmap();
+  if(!heatState.on) return;
+  const hm=buildHeatmapCanvas();
+  if(!hm){toast('Not enough mappable leads for a heatmap','warn');return;}
+  const {url,bounds:b}=hm;
+  if(S.mapMode==='3D'&&cesiumViewer){
+    try{
+      const prov=await Cesium.SingleTileImageryProvider.fromUrl(url,{rectangle:Cesium.Rectangle.fromDegrees(b.w,b.s,b.e,b.n)});
+      if(!heatState.on) return;                       // user toggled off mid-load
+      heatState.cesiumLayer=cesiumViewer.imageryLayers.addImageryProvider(prov);
+      heatState.cesiumLayer.alpha=0.72;
+    }catch(e){console.warn('Cesium heatmap failed:',e);}
+  }else if(map){
+    heatState.leafletLayer=L.imageOverlay(url,[[b.s,b.w],[b.n,b.e]],{opacity:0.6,interactive:false}).addTo(map);
+  }
+}
+
+function toggleHeatmap(){
+  heatState.on=!heatState.on;
+  document.getElementById('heat-toggle').classList.toggle('active',heatState.on);
+  renderHeatmap();
+  toast(heatState.on?'Value-density heatmap on':'Heatmap off','info');
+}
+
 
 function leadPopupHtml(p){
   const sc=scoreColor(p);
@@ -1353,6 +1497,7 @@ function switchMapMode(mode){
     mapEl.style.display='';
     map.invalidateSize();
   }
+  if(heatState.on) setTimeout(renderHeatmap,80);   // re-paint heatmap into the active view
 }
 
 function scoreClass(p){
@@ -1925,6 +2070,7 @@ document.getElementById('front-min').addEventListener('input',e=>{
 
 document.getElementById('map-mode-2d').addEventListener('click',()=>switchMapMode('2D'));
 document.getElementById('map-mode-3d').addEventListener('click',()=>switchMapMode('3D'));
+document.getElementById('heat-toggle').addEventListener('click',toggleHeatmap);
 document.getElementById('pov-toggle').addEventListener('click',()=>{
   S.povOnHover=!S.povOnHover;
   document.getElementById('pov-toggle').classList.toggle('active',S.povOnHover);
@@ -1936,6 +2082,13 @@ document.getElementById('pov-toggle').addEventListener('click',()=>{
 document.getElementById('global-search').addEventListener('input',e=>{
   S.filters.search=e.target.value;
   refreshCurrentView();
+});
+// Enter in search → select + fly camera to the top matching lead (works in 2D and 3D).
+document.getElementById('global-search').addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const hit=sortLeads(applyFilters()).find(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+  if(hit){ if(S.view!=='map') switchView('map'); selectLead(hit); }
+  else toast('No mappable lead matches that search','warn');
 });
 document.addEventListener('keydown',e=>{
   const tag=document.activeElement?.tagName;
