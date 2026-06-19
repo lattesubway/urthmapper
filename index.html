@@ -1629,8 +1629,8 @@ function openDetailPanel(p){
         </div>
       </div>
       <div class="flex flex-col gap-2">
-        ${p.phone&&!p.isDNC?`<button class="btn-p text-xs w-full" onclick="toast('Calling ${p.phone}...','info')"><i class="fa-solid fa-phone mr-2"></i>Call Owner</button>`:''}
-        ${p.phone?`<button class="btn-s text-xs w-full" onclick="toast('SMS drafted','info')"><i class="fa-solid fa-comment mr-2"></i>Send SMS</button>`:''}
+        ${p.phone&&!p.isDNC&&!p.isLitigator&&!p.isDeceased?`<button class="btn-p text-xs w-full" onclick="toast('Calling ${p.phone}...','info')"><i class="fa-solid fa-phone mr-2"></i>Call Owner</button>`:''}
+        ${p.phone&&!p.isLitigator&&!p.isDeceased?`<button class="btn-s text-xs w-full" onclick="toast('SMS drafted','info')"><i class="fa-solid fa-comment mr-2"></i>Send SMS</button>`:''}
         <button class="btn-s text-xs w-full" onclick="toast('Mail template generated','success')"><i class="fa-solid fa-envelope mr-2"></i>Direct Mail</button>
       </div>
     </div>
@@ -1672,6 +1672,8 @@ function openDetailPanel(p){
       ${(p.phones?.length||p.phone)?`<div class="card p-3 mb-3"><div class="text-[10px] mb-1" style="color:var(--muted)">Phone${(p.phones?.length||0)>1?`s (${p.phones.length})`:''}</div>${(p.phones?.length?p.phones:[p.phone]).filter(Boolean).map((ph,i)=>`<a href="tel:${ph}" class="font-mono ${i===0?'text-lg font-bold':'text-sm block mt-1'}" style="color:var(--accent)">${ph}</a>`).join('')}${p.skiptraceSource?`<div class="text-[10px] mt-1" style="color:var(--muted)">via ${p.skiptraceSource}${p.spokeoMatchType?` · ${p.spokeoMatchType}`:''}</div>`:''}${p.phoneType?`<div class="text-[10px]" style="color:var(--muted)">${p.phoneType}</div>`:''}</div>`:'<div class="text-xs p-3 rounded-lg mb-3" style="background:var(--bg-el);color:var(--muted)">No phone on file — run <code>npm run skiptrace:all</code></div>'}
       ${(p.emails?.length||p.email)?`<div class="card p-3 mb-3"><div class="text-[10px] mb-1" style="color:var(--muted)">Email${(p.emails?.length||0)>1?`s (${p.emails.length})`:''}</div>${(p.emails?.length?p.emails:[p.email]).filter(Boolean).map((em,i)=>`<a href="mailto:${em}" class="font-mono ${i===0?'text-sm':'text-xs block mt-1'}" style="color:var(--accent)">${em}</a>`).join('')}</div>`:''}
       ${p.isDNC?'<div class="text-[10px] px-2 py-1.5 rounded mb-3" style="background:var(--danger-dim);color:var(--danger)"><i class="fa-solid fa-ban mr-1"></i>DNC — Do Not Call</div>':''}
+      ${p.isLitigator?'<div class="text-[10px] px-2 py-1.5 rounded mb-3" style="background:var(--danger-dim);color:var(--danger)"><i class="fa-solid fa-gavel mr-1"></i>TCPA LITIGATOR — do not call or text. Direct mail only.</div>':''}
+      ${p.isDeceased?'<div class="text-[10px] px-2 py-1.5 rounded mb-3" style="background:var(--warm-dim,var(--danger-dim));color:var(--warm,var(--danger))"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Owner deceased — likely probate. Contact heirs/estate, not this number.</div>':''}
       ${(p.distHospitalMi||p.distSchoolMi||p.distGroceryMi)?`<div class="text-[10px] font-bold uppercase tracking-wider mb-2" style="color:var(--accent)">Amenities</div><div class="text-[11px] space-y-1" style="color:var(--muted)">${p.distHospitalMi?`Hospital ${p.distHospitalMi} mi<br>`:''}${p.distSchoolMi?`School ${p.distSchoolMi} mi<br>`:''}${p.distGroceryMi?`Grocery ${p.distGroceryMi} mi`:''}</div>`:''}
     </div>
 
@@ -1826,7 +1828,7 @@ function renderLeadsView(){
               <td class="px-4 py-3">
                 <div class="flex items-center gap-1">
                   <button onclick="event.stopPropagation();toggleFav(${p.id})" class="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--bg-hover)]" style="color:${p.favorite?'var(--gold)':'var(--muted)'}"><i class="fa-${p.favorite?'solid':'regular'} fa-star text-[10px]"></i></button>
-                  ${p.phone&&!p.isDNC?`<button onclick="event.stopPropagation();toast('Calling ${p.phone}','info')" class="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--bg-hover)]" style="color:var(--accent)"><i class="fa-solid fa-phone text-[10px]"></i></button>`:''}
+                  ${p.phone&&!p.isDNC&&!p.isLitigator&&!p.isDeceased?`<button onclick="event.stopPropagation();toast('Calling ${p.phone}','info')" class="w-6 h-6 rounded flex items-center justify-center hover:bg-[var(--bg-hover)]" style="color:var(--accent)"><i class="fa-solid fa-phone text-[10px]"></i></button>`:''}
                 </div>
               </td>
             </tr>`;
@@ -2142,8 +2144,8 @@ function updateMapCount(){updateNavCounts();}
 
 function exportCSV(){
   const filtered=sortLeads(applyFilters());
-  const headers=['ParcelID','Owner','OwnerType','County','Address','City','State','MailState','Acreage','Zoning','Frontage','FloodZone','LandValue','Score','Phone','DNC','OutOfState','Absentee','YearsOwned','MultiParcel','Status','Favorite'];
-  const rows=filtered.map(p=>[p.parcelId,p.owner,p.ownerType,p.county,p.address,p.city,p.state,p.mailState,p.acreage,p.zoning,p.frontage,p.floodZone,p.landValue,p.score,p.phone||'',p.isDNC,p.isOOS,p.isAbsentee,p.yrsOwned,p.multiParcel,p.status,p.favorite?'Yes':'No']);
+  const headers=['ParcelID','Owner','OwnerType','County','Address','City','State','MailState','Acreage','Zoning','Frontage','FloodZone','LandValue','Score','Phone','Email','DNC','Litigator','Deceased','OutOfState','Absentee','YearsOwned','MultiParcel','Status','Favorite'];
+  const rows=filtered.map(p=>[p.parcelId,p.owner,p.ownerType,p.county,p.address,p.city,p.state,p.mailState,p.acreage,p.zoning,p.frontage,p.floodZone,p.landValue,p.score,p.phone||'',p.email||'',p.isDNC,p.isLitigator||false,p.isDeceased||false,p.isOOS,p.isAbsentee,p.yrsOwned,p.multiParcel,p.status,p.favorite?'Yes':'No']);
   let csv=headers.join(',')+'\n'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
