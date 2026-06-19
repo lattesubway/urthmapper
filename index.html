@@ -1458,7 +1458,7 @@ function leadPopupHtml(p){
         row('Years owned',p.yrsOwned?`${p.yrsOwned} yrs${p.equityVsSalePct!=null?` (+${p.equityVsSalePct}% vs sale)`:''}`:null),
         row('Portfolio',p.ownerParcelCount>1?`${p.ownerParcelCount} parcels`:'Single parcel'),
         row('Last sale',sale),
-        row('Phone',p.phone?`<a href="tel:${p.phone}" style="color:var(--accent)">${p.phone}</a>${p.isDNC?' <span class="badge badge-danger text-[9px]">DNC</span>':''}`:null),
+        row('Phone',(!p.isLocked&&p.phone)?`<a href="tel:${p.phone}" style="color:var(--accent)">${p.phone}</a>${p.isDNC?' <span class="badge badge-danger text-[9px]">DNC</span>':''}`:null),
         row('Email',(!p.isLocked&&p.email)?`<a href="mailto:${p.email}" style="color:var(--accent)">${p.email}</a>`:null),
         row('Skiptrace',p.skiptraceSource)
       ])}
@@ -1901,7 +1901,7 @@ function renderLeadsView(){
               <td class="px-4 py-3 text-xs">${p.zoning}<br><span style="color:var(--muted)">${p.zoningCategory||''}</span></td>
               <td class="px-4 py-3 text-[11px]" style="color:var(--fg2)">${[p.waterAvailable?'W':null,p.sewerAvailable?'S':null,p.electricAvailable?'E':null].filter(Boolean).join('')||'—'}</td>
               <td class="px-4 py-3 font-heading font-semibold" style="color:var(--accent)">$${p.landValue.toLocaleString()}</td>
-              <td class="px-4 py-3 font-mono text-xs">${p.phone||'—'}</td>
+              <td class="px-4 py-3 font-mono text-xs">${p.isLocked?'<i class="fa-solid fa-lock text-[10px]" style="color:var(--muted)" title="Contact locked"></i>':(p.phone||'—')}</td>
               <td class="px-4 py-3"><span class="badge ${stb}">${p.status}</span></td>
               <td class="px-4 py-3">
                 <div class="flex items-center gap-1">
@@ -2224,8 +2224,8 @@ function updateMapCount(){updateNavCounts();}
 
 function exportCSV(){
   const filtered=sortLeads(applyFilters());
-  const headers=['ParcelID','Owner','OwnerType','County','Address','City','State','MailState','Acreage','Zoning','Frontage','FloodZone','LandValue','Score','Phone','Email','DNC','Litigator','Deceased','OutOfState','Absentee','YearsOwned','MultiParcel','Status','Favorite'];
-  const rows=filtered.map(p=>[p.parcelId,p.owner,p.ownerType,p.county,p.address,p.city,p.state,p.mailState,p.acreage,p.zoning,p.frontage,p.floodZone,p.landValue,p.score,p.phone||'',p.email||'',p.isDNC,p.isLitigator||false,p.isDeceased||false,p.isOOS,p.isAbsentee,p.yrsOwned,p.multiParcel,p.status,p.favorite?'Yes':'No']);
+  const headers=['ParcelID','Owner','OwnerType','County','Locked','Address','City','State','MailState','Acreage','Zoning','Frontage','FloodZone','LandValue','Score','Phone','Email','DNC','Litigator','Deceased','OutOfState','Absentee','YearsOwned','MultiParcel','Status','Favorite'];
+  const rows=filtered.map(p=>[p.parcelId,p.owner,p.ownerType,p.county,p.isLocked?'Yes':'No',p.address,p.city,p.state,p.mailState,p.acreage,p.zoning,p.frontage,p.floodZone,p.landValue,p.score,p.isLocked?'':(p.phone||''),p.isLocked?'':(p.email||''),p.isDNC,p.isLitigator||false,p.isDeceased||false,p.isOOS,p.isAbsentee,p.yrsOwned,p.multiParcel,p.status,p.favorite?'Yes':'No']);
   let csv=headers.join(',')+'\n'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -2235,7 +2235,7 @@ function exportCSV(){
 
 // Campaign-ready: only leads that are safe + legal to call, best contact first.
 function exportCampaign(){
-  const callable=sortLeads(applyFilters()).filter(p=>p.phone&&!p.isDNC&&!p.isLitigator&&!p.isDeceased);
+  const callable=sortLeads(applyFilters()).filter(p=>!p.isLocked&&p.phone&&!p.isDNC&&!p.isLitigator&&!p.isDeceased);
   if(!callable.length){toast('No callable leads in current filter','warn');return;}
   const headers=['Score','Owner','Phone','Email','PhoneType','County','Address','City','State','Acreage','LandValue','ParcelID','Status'];
   const rows=callable.map(p=>[p.score,p.owner,p.phone,p.email||'',p.phoneType||'',p.county,p.address,p.city,p.state,p.acreage,p.landValue,p.parcelId,p.status]);
@@ -2254,7 +2254,7 @@ function exportKML(){
     .map(([id,abgr])=>`<Style id="${id}"><IconStyle><color>${abgr}</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle></Style>`).join('');
   const place=p=>{
     const sid=p.score>=85?'hot':p.score>=70?'warm':p.score>=50?'mid':'cold';
-    const desc=`Score: ${p.score}\nOwner: ${esc(p.owner)}\nPhone: ${esc(p.phone||'—')}${p.isDNC?' (DNC)':''}\nEmail: ${esc(p.email||'—')}\nValue: $${(p.landValue||0).toLocaleString()}\nParcel: ${esc(p.parcelId)}`;
+    const desc=`Score: ${p.score}\nOwner: ${esc(p.owner)}\nPhone: ${esc(p.isLocked?'Locked':(p.phone||'—'))}${!p.isLocked&&p.isDNC?' (DNC)':''}\nEmail: ${esc(p.isLocked?'Locked':(p.email||'—'))}\nValue: $${(p.landValue||0).toLocaleString()}\nParcel: ${esc(p.parcelId)}`;
     return `<Placemark><name>${esc(p.owner||p.parcelId)}</name><styleUrl>#${sid}</styleUrl><description>${desc}</description><Point><coordinates>${p.lng},${p.lat},0</coordinates></Point></Placemark>`;
   };
   const kml=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>UrthMapper Leads</name>${styles}${pts.map(place).join('')}</Document></kml>`;

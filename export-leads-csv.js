@@ -6,10 +6,20 @@
 
 const fs = require('fs');
 
+// Demo gate: only the 50 highest-scoring individual-owner leads are unlocked.
+// Locked leads still export (parcel, owner, valuation, score) but their
+// contact PII is withheld — mirroring the in-app lock in index.html.
+const DEMO_UNLOCK_LIMIT = 50;
+const CONTACT_KEYS = new Set([
+  'phone', 'phones', 'email', 'emails', 'phoneType',
+  'skiptraceSource', 'spokeoMatchType', 'skiptraceStatus',
+]);
+
 const COLUMNS = [
   ['id', 'ID'],
   ['parcelId', 'Parcel ID'],
   ['county', 'County'],
+  ['isLocked', 'Locked'],
   ['owner', 'Owner'],
   ['ownerType', 'Owner Type'],
   ['situsAddress', 'Situs Address'],
@@ -94,12 +104,39 @@ const COLUMNS = [
 ];
 
 function parseArgs(argv) {
-  const options = { input: 'clearwater-leads.json', output: 'urthmapper-leads.csv' };
+  // Default to the enriched master feed so unlocked leads carry real contact
+  // data; locked leads have it stripped below.
+  const options = { input: 'leads-data.js', output: 'urthmapper-leads.csv' };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--input' && argv[i + 1]) options.input = argv[++i];
     else if (argv[i] === '--output' && argv[i + 1]) options.output = argv[++i];
   }
   return options;
+}
+
+// Load leads from either a JSON array (clearwater-leads.json) or the
+// leads-data.js bundle (a `const leadData = [...]` literal + init code).
+function loadLeads(input) {
+  const raw = fs.readFileSync(input, 'utf8');
+  if (input.endsWith('.json')) return JSON.parse(raw);
+  const start = raw.indexOf('[');
+  const end = raw.lastIndexOf('];');
+  if (start === -1 || end === -1) throw new Error(`Could not find leadData array in ${input}`);
+  return JSON.parse(raw.slice(start, end + 1));
+}
+
+// Returns a Set of the unlocked leads: the DEMO_UNLOCK_LIMIT highest-scoring
+// individual-owner leads (stable tie-break by original order). Matches the
+// runtime gate in index.html (loadRealLeads).
+function selectUnlocked(leads) {
+  return new Set(
+    leads
+      .map((lead, i) => ({ lead, i }))
+      .filter(({ lead }) => lead.ownerType === 'Individual')
+      .sort((a, b) => (b.lead.score - a.lead.score) || (a.i - b.i))
+      .slice(0, DEMO_UNLOCK_LIMIT)
+      .map(({ lead }) => lead)
+  );
 }
 
 function cellValue(value) {
@@ -128,12 +165,23 @@ function main() {
     process.exit(1);
   }
 
-  const leads = JSON.parse(fs.readFileSync(options.input, 'utf8'));
+  const leads = loadLeads(options.input);
+  const unlocked = selectUnlocked(leads);
+
   const header = COLUMNS.map(([, label]) => escapeCsv(label)).join(',');
-  const rows = leads.map((lead) => COLUMNS.map(([key]) => escapeCsv(lead[key])).join(','));
+  const rows = leads.map((lead) => {
+    const isLocked = !unlocked.has(lead);
+    return COLUMNS.map(([key]) => {
+      if (key === 'isLocked') return escapeCsv(isLocked);
+      if (isLocked && CONTACT_KEYS.has(key)) return escapeCsv(null);
+      return escapeCsv(lead[key]);
+    }).join(',');
+  });
 
   fs.writeFileSync(options.output, [header, ...rows].join('\n'));
+  const lockedCount = leads.length - unlocked.size;
   console.log(`✅ Exported ${leads.length} leads → ${options.output}`);
+  console.log(`   Unlocked: ${unlocked.size} · Locked (contact withheld): ${lockedCount}`);
   console.log(`   Columns: ${COLUMNS.length}`);
 }
 
