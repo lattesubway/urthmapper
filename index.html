@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0b0d14">
+<meta name="theme-color" content="#f4f2ec">
 <title>Urthmapper — Land Lead Console</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config={theme:{extend:{fontFamily:{heading:['Syne','sans-serif'],body:['DM Sans','sans-serif'],mono:['IBM Plex Mono','monospace']}}}}
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -23,33 +23,36 @@ tailwind.config={theme:{extend:{fontFamily:{heading:['Syne','sans-serif'],body:[
 <!-- <script>window.GOOGLE_MAPS_KEY='YOUR_API_KEY';</script> -->
 <style>
 :root{
-  --bg:#0b0d14;--bg-card:rgba(17,19,30,.88);--bg-el:#1c1f2e;--bg-hover:#262a3d;
-  --fg:#ede8df;--fg2:#9d99ad;--muted:#646078;
-  --accent:#d96847;--accent-dim:rgba(217,104,71,.14);--accent-glow:rgba(217,104,71,.38);
-  --gold:#c9a227;--gold-dim:rgba(201,162,39,.14);--gold2:#9e4b2f;
-  --danger:#f25f5c;--danger-dim:rgba(242,95,92,.14);
-  --success:#5da87a;--success-dim:rgba(93,168,122,.14);
-  --warm:#e8954f;--warm-dim:rgba(232,149,79,.14);
-  --info:#6eb5d4;--info-dim:rgba(110,181,212,.14);
-  --parcel:#2ec4b6;--parcel-dim:rgba(46,196,182,.14);--parcel-glow:rgba(46,196,182,.72);
-  --border:rgba(42,40,58,.92);--border-lt:rgba(62,58,82,.95);
-  --surface-overlay:rgba(14,16,26,.9);--shadow-glow:rgba(217,104,71,.22);
-  --glass:blur(14px) saturate(1.15);
-  --radius:14px;
+  --bg:#0b0a1c;--bg-card:rgba(22,19,42,.80);--bg-el:#16142c;--bg-hover:#231f42;
+  --fg:#f1eefb;--fg2:#aba5c9;--muted:#736d93;
+  --accent:#1fe3d6;--accent-dim:rgba(31,227,214,.14);--accent-glow:rgba(31,227,214,.55);
+  --accent2:#ff3d8b;--accent2-dim:rgba(255,61,139,.14);--accent3:#ffb13d;
+  --gold:#ffc24b;--gold-dim:rgba(255,194,75,.16);--gold2:#ff8a3c;
+  --danger:#ff4d4d;--danger-dim:rgba(255,77,77,.16);
+  --success:#2ee6a6;--success-dim:rgba(46,230,166,.14);
+  --warm:#ff7a4d;--warm-dim:rgba(255,122,77,.14);
+  --info:#34d6ff;--info-dim:rgba(52,214,255,.14);
+  --parcel:#1fe3d6;--parcel-dim:rgba(31,227,214,.16);--parcel-glow:rgba(31,227,214,.85);
+  --border:rgba(150,140,205,.16);--border-lt:rgba(165,155,215,.30);
+  --surface-overlay:rgba(11,10,28,.92);--shadow-glow:rgba(31,227,214,.40);
+  --glass:blur(14px) saturate(1.3);
+  --radius:9px;
+  /* neon Miami score ramp: dim teal (low) -> magenta (elite) */
+  --s5:#ff3d8b;--s4:#ff7a4d;--s3:#ffc24b;--s2:#1fe3d6;--s1:#2f8497;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--fg);font-family:'DM Sans',sans-serif;overflow:hidden}
+body{background:var(--bg);color:var(--fg);font-family:'Inter',sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
-    radial-gradient(ellipse 80% 50% at 15% -10%,rgba(217,104,71,.09),transparent 55%),
-    radial-gradient(ellipse 55% 45% at 92% 8%,rgba(110,181,212,.07),transparent 50%),
-    radial-gradient(ellipse 40% 30% at 50% 100%,rgba(158,75,47,.06),transparent 55%),
-    linear-gradient(rgba(110,181,212,.025) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(110,181,212,.025) 1px,transparent 1px);
-  background-size:auto,auto,auto,52px 52px,52px 52px;opacity:.95}
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.04;
+    radial-gradient(ellipse 70% 50% at 12% -8%,rgba(31,227,214,.13),transparent 55%),
+    radial-gradient(ellipse 62% 46% at 92% 0%,rgba(255,61,139,.13),transparent 52%),
+    radial-gradient(ellipse 50% 40% at 50% 110%,rgba(255,177,61,.08),transparent 55%),
+    linear-gradient(rgba(150,140,205,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(150,140,205,.05) 1px,transparent 1px);
+  background-size:auto,auto,auto,54px 54px,54px 54px}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.035;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;letter-spacing:-.02em}
+h1,h2,h3,h4,h5,h6{font-family:'Bricolage Grotesque',sans-serif;letter-spacing:-.02em}
 #app{position:relative;z-index:1}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg-card)}
@@ -65,7 +68,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;letter-spacing:-.02em}
 .slide-r{animation:slideR .3s ease both}
 
 .card{background:var(--bg-card);backdrop-filter:var(--glass);border:1px solid var(--border);border-radius:var(--radius);transition:transform .2s,border-color .2s,box-shadow .2s}
-.card:hover{border-color:var(--border-lt);box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.card:hover{border-color:var(--border-lt);box-shadow:0 6px 22px rgba(24,23,28,.07)}
 .glass{background:var(--bg-card);backdrop-filter:var(--glass);border:1px solid var(--border)}
 
 .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
@@ -77,8 +80,8 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;letter-spacing:-.02em}
 .badge-muted{background:rgba(100,96,120,.14);color:var(--muted)}
 .badge-info{background:var(--info-dim);color:var(--info)}
 
-.btn-p{background:var(--accent);color:var(--bg);font-weight:700;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;transition:all .15s;font-size:13px;font-family:inherit}
-.btn-p:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-p{background:var(--accent);color:#06141a;font-weight:700;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;transition:all .15s;font-size:13px;font-family:inherit}
+.btn-p:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 0 18px var(--accent-glow)}
 .btn-s{background:transparent;color:var(--fg2);border:1px solid var(--border);padding:7px 16px;border-radius:8px;cursor:pointer;transition:all .15s;font-size:13px;font-family:inherit}
 .btn-s:hover{border-color:var(--accent);color:var(--accent)}
 .btn-ghost{background:transparent;color:var(--fg2);border:none;padding:6px 12px;border-radius:8px;cursor:pointer;transition:all .15s;font-size:12px;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
@@ -99,7 +102,7 @@ select.ipt{cursor:pointer}select.ipt option{background:var(--bg-card)}
 .chip.gold-on{border-color:var(--gold);color:var(--gold);background:var(--gold-dim)}
 
 .toast-c{position:fixed;top:20px;right:20px;z-index:9000;display:flex;flex-direction:column;gap:8px}
-.toast{background:var(--bg-el);border:1px solid var(--border-lt);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:slideR .3s ease;max-width:340px;font-size:13px}
+.toast{background:var(--bg-el);border:1px solid var(--border-lt);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 26px rgba(24,23,28,.12);animation:slideR .3s ease;max-width:340px;font-size:13px}
 .toast.out{animation:fadeOt .3s ease forwards}
 @keyframes fadeOt{to{opacity:0;transform:translateX(20px)}}
 
@@ -110,41 +113,41 @@ select.ipt{cursor:pointer}select.ipt option{background:var(--bg-card)}
 .leaflet-control-zoom a:hover{background:var(--bg-el)!important;color:var(--fg)!important}
 .leaflet-control-attribution{background:var(--surface-overlay)!important;color:var(--muted)!important;font-size:9px!important}
 .leaflet-control-attribution a{color:var(--accent)!important}
-.leaflet-popup-content-wrapper{background:var(--bg-card)!important;color:var(--fg)!important;border-radius:12px!important;border:1px solid var(--border)!important;box-shadow:0 8px 32px rgba(0,0,0,.5)!important}
+.leaflet-popup-content-wrapper{background:var(--bg-card)!important;color:var(--fg)!important;border-radius:12px!important;border:1px solid var(--border)!important;box-shadow:0 10px 30px rgba(24,23,28,.10)!important}
 .leaflet-popup-tip{background:var(--bg-card)!important}
 .leaflet-popup-close-button{color:var(--muted)!important}
 .leaflet-popup-close-button:hover{color:var(--fg)!important}
 
 #cesiumContainer{position:absolute;inset:0;z-index:1;display:none}
 .mode-btn{background:transparent;color:var(--muted);border:1px solid transparent;border-radius:999px;padding:.45rem .75rem;cursor:pointer;transition:all .15s;font-size:10px}
-.mode-btn.active{background:var(--accent-dim);color:var(--accent);border-color:rgba(217,104,71,.4)}
+.mode-btn.active{background:var(--accent-dim);color:var(--accent);border-color:var(--border-lt)}
 .mode-btn:hover{color:var(--fg);border-color:var(--border-lt)}
-.parcel-popup{position:fixed;z-index:1200;width:340px;max-height:78vh;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 56px rgba(0,0,0,.6);pointer-events:auto;font-size:12px}
+.parcel-popup{position:fixed;z-index:1200;width:340px;max-height:78vh;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 48px rgba(24,23,28,.14);pointer-events:auto;font-size:12px}
 .parcel-popup-head{position:sticky;top:0;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--bg-card);border-bottom:1px solid var(--border);border-radius:14px 14px 0 0}
 .parcel-popup-body{padding:10px 14px 14px}
 .pp-sec{margin-top:10px}
 .pp-sec-t{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:4px}
-.pp-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;border-bottom:1px dashed rgba(255,255,255,.05)}
+.pp-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;border-bottom:1px dashed rgba(24,23,28,.07)}
 .pp-k{color:var(--muted);flex-shrink:0}
 .pp-v{text-align:right;color:var(--fg)}
 
-.custom-marker{border-radius:50%;border:2px solid rgba(255,255,255,.3);transition:transform .15s}
+.custom-marker{border-radius:50%;border:1.5px solid rgba(255,255,255,.55);transition:transform .15s;box-shadow:0 0 8px rgba(0,0,0,.5)}
 .custom-marker:hover{transform:scale(1.3);z-index:9999!important}
 
-.score-elite{background:var(--danger);box-shadow:0 0 10px rgba(242,95,92,.45)}
-.score-strong{background:var(--warm);box-shadow:0 0 8px rgba(232,149,79,.35)}
-.score-moderate{background:var(--gold);box-shadow:0 0 6px rgba(201,162,39,.35)}
-.score-low{background:var(--muted);box-shadow:none}
+.score-elite{background:var(--s5)}
+.score-strong{background:var(--s4)}
+.score-moderate{background:var(--s3)}
+.score-low{background:var(--s2)}
 .score-locked{background:var(--bg-hover);border-color:var(--border-lt);opacity:.55}
 
-.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(217,104,71,.18)!important}
-.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(217,104,71,.55)!important;color:var(--fg)!important;font-weight:700;font-family:'Syne',sans-serif}
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:transparent!important}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(12,165,179,.92)!important;color:#fff!important;font-weight:700;font-family:'Bricolage Grotesque',sans-serif}
 
 .lead-popup .leaflet-popup-content{margin:10px 12px;line-height:1.4}
 .lead-popup .leaflet-popup-content-wrapper{border-radius:12px!important}
 
 .parcel-hover-glow{filter:drop-shadow(0 0 10px var(--parcel-glow))}
-.pov-panel{position:absolute;bottom:52px;left:12px;width:min(380px,calc(100% - 24px));z-index:1001;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-lt);box-shadow:0 16px 48px rgba(0,0,0,.45);opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .25s,transform .25s}
+.pov-panel{position:absolute;bottom:52px;left:12px;width:min(380px,calc(100% - 24px));z-index:1001;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-lt);box-shadow:0 16px 40px rgba(24,23,28,.12);opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .25s,transform .25s}
 .pov-panel.visible{opacity:1;transform:translateY(0);pointer-events:auto}
 .pov-panel-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg-card);border-bottom:1px solid var(--border);font-size:10px}
 .pov-viewer-wrap{position:relative;height:200px;background:var(--bg)}
@@ -152,10 +155,10 @@ select.ipt{cursor:pointer}select.ipt option{background:var(--bg-card)}
 #pov-streetview{border:none;display:none}
 #pov-streetview.active{display:block}
 #pov-cesium.hidden{display:none}
-.pov-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,13,20,.8);font-size:11px;color:var(--muted);z-index:2}
+.pov-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(244,242,236,.85);font-size:11px;color:var(--muted);z-index:2}
 .pov-loading.off{display:none}
 
-.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:8000;animation:fadeIn .2s ease}
+.modal-ov{position:fixed;inset:0;background:rgba(24,23,28,.34);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:8000;animation:fadeIn .2s ease}
 .modal-c{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:92%;animation:fadeUp .3s ease;max-height:85vh;overflow-y:auto}
 
 .lead-card{padding:12px;border-radius:10px;cursor:pointer;transition:all .18s;border:1px solid transparent}
@@ -183,15 +186,15 @@ select.ipt{cursor:pointer}select.ipt option{background:var(--bg-card)}
 .util-pill.on{background:var(--success-dim);color:var(--success);border-color:rgba(93,168,122,.3)}
 .util-pill.off{background:transparent;color:var(--muted)}
 
-.cmd-palette{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:9500;display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;animation:fadeIn .15s}
-.cmd-box{width:min(520px,92vw);background:var(--bg-el);border:1px solid var(--border-lt);border-radius:16px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.cmd-palette{position:fixed;inset:0;background:rgba(24,23,28,.30);backdrop-filter:blur(8px);z-index:9500;display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;animation:fadeIn .15s}
+.cmd-box{width:min(520px,92vw);background:var(--bg-el);border:1px solid var(--border-lt);border-radius:16px;overflow:hidden;box-shadow:0 24px 64px rgba(24,23,28,.16)}
 .cmd-input{width:100%;padding:16px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--fg);font-size:15px;outline:none;font-family:inherit}
 .cmd-results{max-height:320px;overflow-y:auto;padding:8px}
 .cmd-item{padding:10px 14px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--fg2);transition:background .1s}
 .cmd-item:hover,.cmd-item.sel{background:var(--bg-hover);color:var(--fg)}
 .cmd-kbd{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg);border:1px solid var(--border);color:var(--muted)}
 
-.lead-row-active{background:var(--accent-dim)!important;outline:1px solid rgba(217,104,71,.25)}
+.lead-row-active{background:var(--accent-dim)!important;outline:1px solid var(--border-lt)}
 .table-sticky thead{position:sticky;top:0;z-index:2;background:var(--bg-card);backdrop-filter:var(--glass)}
 
 @keyframes markerPulse{0%,100%{box-shadow:0 0 0 0 var(--accent-glow)}50%{box-shadow:0 0 0 8px transparent}}
@@ -212,6 +215,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .toggle input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px}
 
 @media(prefers-reduced-motion:reduce){*{animation-duration:0s!important;transition-duration:0s!important}}
+
+/* monochrome map: grayscale the satellite tiles and the 3D globe */
+.mono-tiles{filter:saturate(1.18) contrast(1.04)}
+#cesiumContainer canvas{filter:saturate(1.12) contrast(1.03)}
+.leaflet-container{background:#0b0a1c!important}
+.leaflet-control-zoom a{background:rgba(22,19,42,.92)!important;color:var(--fg2)!important;border-color:var(--border)!important}
+.leaflet-control-layers{background:rgba(22,19,42,.96)!important;border:1px solid var(--border)!important;border-radius:8px!important;color:var(--fg)!important;box-shadow:0 6px 18px rgba(0,0,0,.4)!important}
+.leaflet-bar{box-shadow:0 4px 14px rgba(0,0,0,.4)!important}
+
 @media(max-width:1024px){
   .sidebar{display:none!important}
   .lead-panel{display:none!important}
@@ -222,13 +234,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 <body>
 
 <div id="loader" style="position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s">
-  <div style="width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--gold2));box-shadow:0 0 40px var(--shadow-glow)">
-    <i class="fa-solid fa-layer-group" style="color:var(--bg);font-size:18px"></i>
+  <div style="width:84px;height:84px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--accent2) 55%,var(--gold));box-shadow:0 0 60px var(--accent-glow),0 0 120px rgba(255,61,139,.35)">
+    <i class="fa-solid fa-earth-americas" style="color:#0b0a1c;font-size:38px"></i>
   </div>
-  <p style="margin-top:18px;color:var(--fg);font-size:15px;letter-spacing:.5px;font-family:'Syne';font-weight:700">Urthmapper</p>
-  <p style="margin-top:6px;color:var(--muted);font-size:11px">Loading parcel intelligence…</p>
-  <div style="width:120px;height:3px;background:var(--border);border-radius:99px;margin-top:16px;overflow:hidden">
-    <div id="loader-bar" style="height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--info));border-radius:99px;transition:width .3s"></div>
+  <p style="margin-top:26px;font-family:'Orbitron',sans-serif;font-weight:800;font-size:26px;letter-spacing:.34em;text-indent:.34em;background:linear-gradient(95deg,var(--accent),var(--accent2) 60%,var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">URTHMAPPER</p>
+  <p style="margin-top:8px;color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase">Loading parcel intelligence</p>
+  <div style="width:140px;height:3px;background:var(--border);border-radius:99px;margin-top:18px;overflow:hidden">
+    <div id="loader-bar" style="height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--gold));border-radius:99px;transition:width .3s"></div>
   </div>
 </div>
 
@@ -236,14 +248,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 
 <nav class="h-12 flex items-center justify-between px-4 shrink-0 glass" style="border-bottom:1px solid var(--border)">
   <div class="flex items-center gap-5">
-    <div class="flex items-center gap-2">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,var(--accent),var(--gold2))">
-        <i class="fa-solid fa-check text-[10px]" style="color:var(--bg)"></i>
-      </div>
-      <div class="leading-none">
-        <span class="font-heading font-bold text-sm tracking-tight">Urthmapper</span>
-        <span class="text-[9px] block" style="color:var(--muted)">Lead Console</span>
-      </div>
+    <div class="flex items-center">
+      <span class="font-bold tracking-tight" style="font-family:'Orbitron',sans-serif;font-weight:800;font-size:15px;letter-spacing:.18em;background:linear-gradient(95deg,var(--accent),var(--accent2) 60%,var(--gold));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">URTHMAPPER</span>
     </div>
     <div class="flex items-center h-12">
       <button class="nav-tab active h-12 text-xs font-medium" style="color:var(--fg)" data-view="map"><i class="fa-solid fa-map-location-dot mr-1.5"></i>Map</button>
@@ -262,6 +268,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     <button class="btn-ghost" id="cmd-btn" title="Command palette (⌘K)"><i class="fa-solid fa-terminal text-xs"></i></button>
     <span class="nav-pill hidden sm:inline" id="nav-lead-count">—</span>
     <button class="btn-ghost" id="help-btn" title="Help (?)"><i class="fa-solid fa-circle-question text-xs"></i></button>
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center ml-1 shrink-0" style="background:linear-gradient(135deg,var(--accent),var(--accent2) 55%,var(--gold));box-shadow:0 0 16px var(--accent-glow)" title="Urthmapper">
+      <i class="fa-solid fa-earth-americas text-[13px]" style="color:#0b0a1c"></i>
+    </div>
   </div>
 </nav>
 
@@ -401,10 +410,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
   <div class="absolute top-3 z-[1000] p-3 rounded-xl text-[10px] glass hidden xl:block transition-all duration-300" style="right:320px" id="score-legend">
     <div class="font-heading font-bold text-[9px] uppercase tracking-wider mb-2" style="color:var(--muted)">Appeal Score</div>
     <div class="flex flex-col gap-1.5">
-      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--danger)"></span>70+ Elite</div>
-      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--warm)"></span>50–69 Strong</div>
-      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--gold)"></span>30–49 Moderate</div>
-      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--muted)"></span>&lt;30 Low</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--s5)"></span>70+ Elite</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--s4)"></span>50–69 Strong</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--s3)"></span>30–49 Moderate</div>
+      <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--s2)"></span>&lt;30 Low</div>
       <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--bg-hover)"></span>Locked</div>
     </div>
   </div>
@@ -436,11 +445,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 let _s=42; function sr(){_s=(_s*16807)%2147483647;return(_s-1)/2147483646}
 function pal(k){return getComputedStyle(document.documentElement).getPropertyValue('--'+k).trim()}
 function scoreHex(p){
-  if(p.isLocked) return pal('muted');
-  if(p.score>=70) return pal('danger');
-  if(p.score>=50) return pal('warm');
-  if(p.score>=30) return pal('gold');
-  return pal('muted');
+  if(p.isLocked) return pal('s1');
+  if(p.score>=85) return pal('s5');
+  if(p.score>=70) return pal('s4');
+  if(p.score>=50) return pal('s3');
+  if(p.score>=30) return pal('s2');
+  return pal('s1');
 }
 
 const COUNTIES=['Pinellas','Hillsborough','Pasco','Manatee','Sarasota'];
@@ -580,7 +590,7 @@ const S={
   sortAsc:false,
   selected:null,
   detailOpen:false,
-  mapMode:'2D',
+  mapMode:'3D',
   drawerCollapsed:false,
   detailTab:'overview',
   povOnHover:true
@@ -688,9 +698,9 @@ function syncLeadSelectionUI(p){
 
 function scoreColor(p){
   if(p.isLocked) return 'var(--muted)';
-  if(p.score>=70) return 'var(--danger)';
-  if(p.score>=50) return 'var(--warm)';
-  if(p.score>=30) return 'var(--gold)';
+  if(p.score>=70) return 'var(--s4)';
+  if(p.score>=50) return 'var(--s3)';
+  if(p.score>=30) return 'var(--s2)';
   return 'var(--muted)';
 }
 
@@ -735,7 +745,7 @@ function renderMapDrawer(){
     return p.owner.toLowerCase().includes(q)||p.parcelId.toLowerCase().includes(q)||(p.city||'').toLowerCase().includes(q);
   }).slice(0,80);
   list.innerHTML=filtered.map(p=>{
-    const sc=p.score>=70?'var(--danger)':p.score>=50?'var(--warm)':p.score>=30?'var(--gold)':'var(--muted)';
+    const sc=p.score>=70?'var(--s4)':p.score>=50?'var(--s3)':p.score>=30?'var(--s2)':'var(--s1)';
     const active=S.selected?.id===p.id?'active':'';
     return `<div class="drawer-item ${active}" data-id="${p.id}" onmouseenter="onLeadHover(prospects.find(x=>x.id===${p.id}))" onmouseleave="onLeadHoverEnd(prospects.find(x=>x.id===${p.id}))" onclick="selectLead(prospects.find(x=>x.id===${p.id}))">
       <div class="flex items-center justify-between gap-2">
@@ -1066,15 +1076,17 @@ function initMap(){
   map=L.map('map',{zoomControl:true,attributionControl:true}).setView([27.97,-82.76],10);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
     attribution:'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-    subdomains:'abcd',maxZoom:18
+    subdomains:'abcd',maxZoom:19
   }).addTo(map);
 
-  const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:18});
-  L.control.layers({'Dark':L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd'}),'Satellite':satellite},null,{position:'topright'}).addTo(map);
+  const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:18,className:'mono-tiles'});
+  L.control.layers({'Map':L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd'}),'Satellite':satellite},null,{position:'topright'}).addTo(map);
 
   clusterGroup=L.markerClusterGroup({spiderfyOnMaxZoom:true,showCoverageOnHover:false,maxClusterRadius:40,iconCreateFunction:function(cluster){
     const n=cluster.getChildCount();
-    return L.divIcon({html:`<div style="background:rgba(217,104,71,.45);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Syne';font-weight:700;font-size:12px;color:var(--fg)">${n}</div>`,className:'',iconSize:[36,36]});
+    const sz=n<10?38:n<50?46:n<150?54:62;
+    const ring=n<10?'rgba(31,227,214,.32)':n<50?'rgba(255,177,61,.38)':'rgba(255,61,139,.42)';
+    return L.divIcon({html:`<div style="background:linear-gradient(135deg,#1fe3d6,#ff3d8b);border-radius:50%;width:${sz}px;height:${sz}px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-weight:800;font-size:${n<150?13:15}px;color:#06141a;border:2px solid rgba(255,255,255,.4);box-shadow:0 0 0 6px ${ring},0 0 22px rgba(255,61,139,.55)">${n}</div>`,className:'',iconSize:[sz,sz]});
   }});
 
   markerLayerGroup=L.layerGroup().addTo(map);
@@ -1082,7 +1094,7 @@ function initMap(){
   selectedParcelLayer=L.layerGroup().addTo(map);
   hoverLoadingLayer=L.layerGroup().addTo(map);
   map.addLayer(clusterGroup);
-  switchMapMode('2D');
+  switchMapMode('3D');
   renderMarkers();
 
   map.on('mousemove',e=>{
@@ -1196,15 +1208,16 @@ function render3DBlimps(){
       },
       label:{
         text:`${name}\n${val} · ${p.score}`,
-        font:'600 12px "DM Sans",sans-serif',
-        fillColor:Cesium.Color.WHITE,
-        showBackground:true,
-        backgroundColor:Cesium.Color.fromCssColorString('#11131e').withAlpha(.86),
-        backgroundPadding:new Cesium.Cartesian2(9,6),
+        font:'600 12px "Inter",sans-serif',
+        fillColor:Cesium.Color.fromCssColorString('#fbfaf7'),
+        showBackground:false,
+        style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+        outlineColor:Cesium.Color.fromCssColorString('#18171c').withAlpha(.92),
+        outlineWidth:3,
         verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
         pixelOffset:new Cesium.Cartesian2(0,-12),
         scaleByDistance:new Cesium.NearFarScalar(3000,1.0,140000,0.55),
-        translucencyByDistance:new Cesium.NearFarScalar(90000,1.0,260000,0.0),
+        distanceDisplayCondition:new Cesium.DistanceDisplayCondition(0.0,45000.0),
         disableDepthTestDistance:Number.POSITIVE_INFINITY
       }
     });
@@ -1288,11 +1301,11 @@ function buildHeatmapCanvas(){
   const lut=(()=>{
     const c=document.createElement('canvas');c.width=256;c.height=1;const cx=c.getContext('2d');
     const gr=cx.createLinearGradient(0,0,256,0);
-    gr.addColorStop(0.00,'rgba(46,134,222,0)');
-    gr.addColorStop(0.30,'rgba(46,196,182,0.75)');
-    gr.addColorStop(0.55,'rgba(201,162,39,0.85)');
-    gr.addColorStop(0.78,'rgba(232,149,79,0.92)');
-    gr.addColorStop(1.00,'rgba(242,95,92,0.98)');
+    gr.addColorStop(0.00,'rgba(39,194,207,0)');
+    gr.addColorStop(0.28,'rgba(39,194,207,0.62)');
+    gr.addColorStop(0.52,'rgba(247,179,43,0.80)');
+    gr.addColorStop(0.76,'rgba(255,122,89,0.90)');
+    gr.addColorStop(1.00,'rgba(255,79,139,0.97)');
     cx.fillStyle=gr;cx.fillRect(0,0,256,1);
     return cx.getImageData(0,0,256,1).data;
   })();
@@ -1427,6 +1440,7 @@ function popupLeadCenter(lead){
 
 function showParcelPopup(lead){
   if(!lead) return;
+  if(S.detailOpen){hideParcelPopup();return;}   // detail panel already shows full info; avoid covering the property
   popupLeadId=lead.id;
   const popup=document.getElementById('parcel-popup');
   popup.innerHTML=leadPopupHtml(lead);
@@ -1449,6 +1463,7 @@ function updateParcelPopupPosition(){
   if(popupLeadId==null||!cesiumViewer) return;
   const popup=document.getElementById('parcel-popup');
   if(!popup||popup.classList.contains('hidden')) return;
+  if(S.detailOpen){popup.style.display='none';return;}
   const lead=prospects.find(p=>p.id===popupLeadId);
   if(!lead){hideParcelPopup();return;}
   const c=popupLeadCenter(lead);
@@ -1555,20 +1570,20 @@ function selectLead(p){
   renderMapDrawer();
   const activeDrawer=document.querySelector(`.drawer-item[data-id="${p.id}"]`);
   if(activeDrawer) activeDrawer.scrollIntoView({behavior:'smooth',block:'nearest'});
-  if(map) map.flyTo([p.lat,p.lng],15,{duration:.8});
+  if(map&&S.mapMode==='2D'){map.invalidateSize();map.flyTo([p.lat,p.lng],15,{duration:.8});}
   hoverLeadId=p.id;
   ensureLeadGeometry(p).then(()=>{
     if(S.selected?.id!==p.id) return;
     const geo=esriRingsToGeoJSON(p.geometry);
-    if(geo&&map){
+    if(geo&&map&&S.mapMode==='2D'){
       const bounds=L.geoJSON(geo).getBounds();
-      if(bounds.isValid()) map.flyToBounds(bounds.pad(.25),{duration:.8,maxZoom:17});
+      if(bounds.isValid()) map.flyToBounds(bounds.pad(.3),{duration:.8,maxZoom:17});
     }
     updateSelectedParcel(p);
     showPovPanel(p);
   });
   if(cesiumViewer&&S.mapMode==='3D'){
-    cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(p.lng,p.lat,1000),orientation:{heading:Cesium.Math.toRadians(15),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8});
+    cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(p.lng,p.lat,1000),orientation:{heading:Cesium.Math.toRadians(15),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8,complete:()=>{try{cesiumViewer.scene.camera.moveRight(180);}catch(e){}}});
   }
 }
 
@@ -1579,7 +1594,7 @@ function openDetailPanel(p){
   const dc=document.getElementById('detail-content');
   const sc=scoreColor(p);
   const scoreLabel=p.isLocked?'Locked':p.score>=70?'Elite':p.score>=50?'Strong':p.score>=30?'Moderate':'Low';
-  const scoreBadge=p.isLocked?'badge-muted':p.score>=70?'badge-danger':p.score>=50?'badge-warm':p.score>=30?'badge-gold':'badge-muted';
+  const scoreBadge=p.isLocked?'badge-muted':p.score>=70?'badge-accent':p.score>=50?'badge-warm':p.score>=30?'badge-gold':'badge-muted';
   const tab=S.detailTab||'overview';
   const filtered=sortLeads(applyFilters());
   const idx=filtered.findIndex(x=>x.id===p.id);
@@ -1819,7 +1834,7 @@ function renderLeadsView(){
         <tbody>
           ${filtered.map(p=>{
             const scCol=scoreColor(p);
-            const sb=p.score>=70?'badge-danger':p.score>=50?'badge-warm':p.score>=30?'badge-gold':'badge-muted';
+            const sb=p.score>=70?'badge-accent':p.score>=50?'badge-warm':p.score>=30?'badge-gold':'badge-muted';
             const stb=p.status==='Contacted'?'badge-warm':p.status==='Interested'?'badge-success':p.status==='Pass'?'badge-muted':'badge-accent';
             const active=S.selected?.id===p.id?'lead-row-active':'';
             return `<tr class="cursor-pointer transition-colors hover:bg-[var(--bg-el)] ${active}" data-id="${p.id}" onclick="selectLeadFromTable(${p.id})" style="border-bottom:1px solid var(--border)">
@@ -1900,7 +1915,7 @@ function renderDashboard(){
         <div class="text-[10px] mt-1" style="color:var(--muted)">${prospects.length} total in inventory</div>
       </div>
       <div class="card p-5 fade-up relative overflow-hidden" style="animation-delay:60ms">
-        <div class="stat-bar" style="background:var(--danger)"></div>
+        <div class="stat-bar" style="background:var(--accent)"></div>
         <div class="flex items-center justify-between mb-2"><span class="text-xs" style="color:var(--muted)">Elite Leads</span><div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--danger-dim);color:var(--danger)"><i class="fa-solid fa-star text-xs"></i></div></div>
         <div class="font-heading font-bold text-2xl">${eliteCount}</div>
         <div class="text-[10px] mt-1" style="color:var(--muted)">Score 70+ priority</div>
@@ -1965,7 +1980,7 @@ function renderDashboard(){
           <button class="btn-s text-xs" onclick="exportCSV()"><i class="fa-solid fa-file-export mr-2" style="color:var(--gold)"></i>Export CSV</button>
           <button class="btn-s text-xs" onclick="exportCampaign()"><i class="fa-solid fa-phone-volume mr-2" style="color:var(--success)"></i>Campaign list</button>
           <button class="btn-s text-xs" onclick="exportKML()"><i class="fa-solid fa-earth-americas mr-2" style="color:var(--accent)"></i>Export KML</button>
-          <button class="btn-s text-xs" onclick="S.filters.quick='elite';updateFilterUI();switchView('map');toast('Showing elite leads','info')"><i class="fa-solid fa-star mr-2" style="color:var(--danger)"></i>Elite Leads</button>
+          <button class="btn-s text-xs" onclick="S.filters.quick='elite';updateFilterUI();switchView('map');toast('Showing elite leads','info')"><i class="fa-solid fa-star mr-2" style="color:var(--accent)"></i>Elite Leads</button>
           <button class="btn-s text-xs" onclick="S.filters.quick='hasphone';updateFilterUI();switchView('map');toast('Showing leads with phones','info')"><i class="fa-solid fa-phone mr-2" style="color:var(--accent)"></i>Has Phone</button>
           <button class="btn-s text-xs" onclick="S.filters.quick='strict';updateFilterUI();switchView('map');toast('Showing buyer-criteria fit','info')"><i class="fa-solid fa-circle-check mr-2" style="color:var(--success)"></i>Buyer Fit</button>
           <button class="btn-s text-xs" onclick="showHelp()"><i class="fa-solid fa-circle-question mr-2"></i>Help Guide</button>
@@ -1993,26 +2008,26 @@ function renderAnalytics(){
     </div>
   `;
 
-  const gridCol='rgba(62,58,82,.35)',tickCol=pal('muted');
+  const gridCol='rgba(24,23,28,.10)',tickCol=pal('muted');
   const baseOpts={responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:gridCol},ticks:{color:tickCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:tickCol,font:{size:10}}}}};
 
   const bins=[0,0,0,0];
   filtered.forEach(p=>{if(p.score>=70)bins[0]++;else if(p.score>=50)bins[1]++;else if(p.score>=30)bins[2]++;else bins[3]++;});
-  chartInstances.push(new Chart(document.getElementById('ch-scores'),{type:'bar',data:{labels:['Elite 70+','Strong 50-69','Moderate 30-49','Low <30'],datasets:[{data:bins,backgroundColor:[pal('danger'),pal('warm'),pal('gold'),pal('muted')],borderRadius:6,barThickness:28}]},options:{...baseOpts,plugins:{legend:{display:false}}}}));
+  chartInstances.push(new Chart(document.getElementById('ch-scores'),{type:'bar',data:{labels:['Elite 70+','Strong 50-69','Moderate 30-49','Low <30'],datasets:[{data:bins,backgroundColor:[pal('s5'),pal('s4'),pal('s3'),pal('s2')],borderRadius:6,barThickness:28}]},options:{...baseOpts,plugins:{legend:{display:false}}}}));
 
   const cData=COUNTIES.map(c=>filtered.filter(p=>p.county===c).reduce((a,p)=>a+p.landValue,0)/1000);
-  chartInstances.push(new Chart(document.getElementById('ch-county'),{type:'bar',data:{labels:COUNTIES,datasets:[{data:cData,backgroundColor:[pal('accent'),pal('gold'),pal('success'),pal('info'),pal('gold2')],borderRadius:6,barThickness:28}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>'$'+v+'K'}}}}}));
+  chartInstances.push(new Chart(document.getElementById('ch-county'),{type:'bar',data:{labels:COUNTIES,datasets:[{data:cData,backgroundColor:[pal('s5'),pal('s4'),pal('s3'),pal('s2'),pal('s1')],borderRadius:6,barThickness:28}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>'$'+v+'K'}}}}}));
 
   const otData=OWNER_TYPES.map(t=>filtered.filter(p=>p.ownerType===t).length);
-  const otColors=[pal('accent'),pal('gold'),pal('gold2'),pal('danger'),pal('warm'),pal('success')];
+  const otColors=[pal('s5'),pal('s4'),pal('s3'),pal('s2'),pal('s1'),pal('warm')];
   chartInstances.push(new Chart(document.getElementById('ch-owner'),{type:'doughnut',data:{labels:OWNER_TYPES,datasets:[{data:otData,backgroundColor:otColors,borderWidth:0,hoverOffset:8}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:tickCol,font:{size:10},padding:10,usePointStyle:true,pointStyle:'circle'}}}}}));
 
   const fzLabels=['None','X (minimal)','AE (high)'];
   const fzData=fzLabels.map(l=>{const m=filtered.filter(p=>p.floodZone===l);return m.length?Math.round(m.reduce((a,p)=>a+p.score,0)/m.length):0;});
-  chartInstances.push(new Chart(document.getElementById('ch-flood'),{type:'bar',data:{labels:fzLabels,datasets:[{data:fzData,backgroundColor:[pal('success'),pal('gold'),pal('danger')],borderRadius:6,barThickness:36}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,beginAtZero:true,max:100}}}}));
+  chartInstances.push(new Chart(document.getElementById('ch-flood'),{type:'bar',data:{labels:fzLabels,datasets:[{data:fzData,backgroundColor:[pal('s4'),pal('s3'),pal('s2')],borderRadius:6,barThickness:36}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,beginAtZero:true,max:100}}}}));
 
   const scatter=filtered.filter(p=>p.frontage>0).slice(0,80).map(p=>({x:p.frontage,y:p.score}));
-  chartInstances.push(new Chart(document.getElementById('ch-frontage'),{type:'scatter',data:{datasets:[{data:scatter,backgroundColor:'rgba(217,104,71,.55)',pointRadius:3}]},options:{...baseOpts,scales:{x:{...baseOpts.scales.x,title:{display:true,text:'Frontage (ft)',color:tickCol,font:{size:10}}},y:{...baseOpts.scales.y,title:{display:true,text:'Score',color:tickCol,font:{size:10}},beginAtZero:true,max:100}}}}));
+  chartInstances.push(new Chart(document.getElementById('ch-frontage'),{type:'scatter',data:{datasets:[{data:scatter,backgroundColor:'rgba(24,23,28,.5)',pointRadius:3}]},options:{...baseOpts,scales:{x:{...baseOpts.scales.x,title:{display:true,text:'Frontage (ft)',color:tickCol,font:{size:10}}},y:{...baseOpts.scales.y,title:{display:true,text:'Score',color:tickCol,font:{size:10}},beginAtZero:true,max:100}}}}));
 }
 
 document.getElementById('county-chips').addEventListener('click',e=>{
@@ -2232,10 +2247,10 @@ function showHelp(){
           <button onclick="document.getElementById('modal-root').innerHTML=''" class="btn-ghost px-2"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="space-y-4 text-sm" style="color:var(--fg2)">
-          <div><span class="font-heading font-bold" style="color:var(--parcel)">01</span> <strong style="color:var(--fg)">Parcel perimeter on hover</strong><p class="mt-1">Hover a map pin or Lead Stack row to fetch the real county GIS boundary (ArcGIS, all 5 counties). A glowing <span style="color:var(--parcel)">teal polygon</span> outlines the parcel. Selected leads keep a <span style="color:var(--gold)">gold perimeter</span> until you close the detail panel. Click a lead to zoom the map to parcel bounds.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--parcel)">01</span> <strong style="color:var(--fg)">Parcel perimeter on hover</strong><p class="mt-1">Hover a map pin or Lead Stack row to fetch the real county GIS boundary (ArcGIS, all 5 counties). A crisp <span style="color:var(--parcel)">graphite polygon</span> outlines the parcel. Selected leads keep an <span style="color:var(--fg)">ink perimeter</span> until you close the detail panel. Click a lead to zoom the map to parcel bounds.</p></div>
           <div><span class="font-heading font-bold" style="color:var(--accent)">02</span> <strong style="color:var(--fg)">Earth POV preview</strong><p class="mt-1">Bottom-left panel shows ground-level satellite view (Cesium + Esri). Parcel appears as a 3D extruded outline. <i class="fa-solid fa-globe"></i> opens Google Earth Web · <i class="fa-solid fa-person-walking"></i> opens Street View. Toggle <strong>POV</strong> top-left to disable the preview (perimeter hover still works).</p></div>
           <div><span class="font-heading font-bold" style="color:var(--accent)">03</span> <strong style="color:var(--fg)">Embedded Street View</strong><p class="mt-1">Add <code style="color:var(--parcel)">window.GOOGLE_MAPS_KEY</code> before <code>leads-data.js</code> for in-app Street View. Without a key, POV uses the Cesium ground camera.</p></div>
-          <div><span class="font-heading font-bold" style="color:var(--accent)">04</span> <strong style="color:var(--fg)">3D mode</strong><p class="mt-1">Switch to 3D and hover extruded parcels — same teal highlight and POV panel apply.</p></div>
+          <div><span class="font-heading font-bold" style="color:var(--accent)">04</span> <strong style="color:var(--fg)">3D mode</strong><p class="mt-1">Switch to 3D and hover extruded parcels — same graphite highlight and POV panel apply.</p></div>
           <div><span class="font-heading font-bold" style="color:var(--accent)">05</span> <strong style="color:var(--fg)">Filters & export</strong><p class="mt-1">Left panel filters by county, score, frontage, flood, and more. Export CSV or share a filtered URL.</p></div>
         </div>
         <div class="mt-4 text-[11px]" style="color:var(--muted)">Pro tips: <span class="cmd-kbd">⌘K</span> command palette · <span class="cmd-kbd">/</span> search · <span class="cmd-kbd">J</span>/<span class="cmd-kbd">K</span> prev/next lead · <span class="cmd-kbd">?</span> help</div>
