@@ -343,6 +343,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     <label class="toggle"><input type="checkbox" id="t-locked"> Hide locked leads</label>
     <label class="toggle"><input type="checkbox" id="t-phone"> Has phone number</label>
     <label class="toggle"><input type="checkbox" id="t-dnc"> Hide DNC numbers</label>
+    <label class="toggle"><input type="checkbox" id="t-safe"> Hide litigators &amp; deceased</label>
+    <label class="toggle"><input type="checkbox" id="t-portfolio"> Portfolio owners only</label>
     <label class="toggle"><input type="checkbox" id="t-oos"> Out-of-state only</label>
     <label class="toggle"><input type="checkbox" id="t-absentee"> Absentee only</label>
     <label class="toggle"><input type="checkbox" id="t-mh"> MH-allowed zoning</label>
@@ -571,7 +573,7 @@ const S={
   filters:{
     search:'',quick:null,view:'all',counties:[],ownerTypes:[],
     scoreMin:0,valMax:200000,frontMin:0,flood:null,
-    hideLocked:false,phoneOnly:false,hideDnc:false,
+    hideLocked:false,phoneOnly:false,hideDnc:false,callSafe:false,portfolioOnly:false,
     oosOnly:false,absenteeOnly:false,mhOnly:false,cluster:true
   },
   sort:'score',
@@ -587,10 +589,12 @@ const S={
 function loadSaved(){
   try{
     const d=JSON.parse(localStorage.getItem('sg-leads')||'{}');
-    prospects.forEach(p=>{if(d[p.id]){p.status=d[p.id].s||'New';p.favorite=d[p.id].f||false;}});
+    prospects.forEach(p=>{if(d[p.id]){p.status=d[p.id].s||'New';p.favorite=d[p.id].f||false;p.notes=d[p.id].n||'';p.callback=d[p.id].c||'';}});
   }catch(e){}
 }
-function saveLead(p){try{const d=JSON.parse(localStorage.getItem('sg-leads')||'{}');d[p.id]={s:p.status,f:p.favorite};localStorage.setItem('sg-leads',JSON.stringify(d));}catch(e){}}
+function saveLead(p){try{const d=JSON.parse(localStorage.getItem('sg-leads')||'{}');d[p.id]={s:p.status,f:p.favorite,n:p.notes||'',c:p.callback||''};localStorage.setItem('sg-leads',JSON.stringify(d));}catch(e){}}
+function setLeadNote(id,v){const p=prospects.find(x=>x.id===id);if(!p)return;p.notes=v;saveLead(p);}
+function setLeadCallback(id,v){const p=prospects.find(x=>x.id===id);if(!p)return;p.callback=v;saveLead(p);if(v)toast('Callback set for '+v,'success');}
 loadSaved();
 
 function toast(msg,type='info'){
@@ -627,6 +631,8 @@ function applyFilters(){
     if(f.hideLocked&&p.isLocked) return false;
     if(f.phoneOnly&&!p.phone) return false;
     if(f.hideDnc&&p.isDNC) return false;
+    if(f.callSafe&&(p.isDNC||p.isLitigator||p.isDeceased)) return false;
+    if(f.portfolioOnly&&!p.isPortfolioOwner) return false;
     if(f.oosOnly&&!p.isOOS) return false;
     if(f.absenteeOnly&&!p.isAbsentee) return false;
     if(f.mhOnly&&!p.allowsMobileHome) return false;
@@ -640,7 +646,7 @@ function countActiveFilters(){
   if(f.counties.length) n++;if(f.ownerTypes.length) n++;
   if(f.scoreMin>0) n++;if(f.valMax<200000) n++;if(f.frontMin>0) n++;
   if(f.flood) n++;
-  if(f.hideLocked||f.phoneOnly||f.hideDnc||f.oosOnly||f.absenteeOnly||f.mhOnly) n++;
+  if(f.hideLocked||f.phoneOnly||f.hideDnc||f.callSafe||f.portfolioOnly||f.oosOnly||f.absenteeOnly||f.mhOnly) n++;
   return n;
 }
 
@@ -1628,6 +1634,14 @@ function openDetailPanel(p){
           ${STATUSES.map(st=>`<span class="chip text-[10px] ${p.status===st?'on':''}" onclick="setLeadStatus(${p.id},'${st}')">${st}</span>`).join('')}
         </div>
       </div>
+      <div class="mb-3">
+        <label class="filter-label">Callback date</label>
+        <input type="date" value="${p.callback||''}" onchange="setLeadCallback(${p.id},this.value)" class="w-full text-xs px-2 py-1.5 rounded" style="background:var(--bg-el);border:1px solid var(--border);color:var(--fg)">
+      </div>
+      <div class="mb-3">
+        <label class="filter-label">Notes</label>
+        <textarea rows="3" oninput="setLeadNote(${p.id},this.value)" placeholder="Call notes, offer made, follow-up…" class="w-full text-xs px-2 py-1.5 rounded resize-y" style="background:var(--bg-el);border:1px solid var(--border);color:var(--fg)">${(p.notes||'').replace(/</g,'&lt;')}</textarea>
+      </div>
       <div class="flex flex-col gap-2">
         ${p.phone&&!p.isDNC&&!p.isLitigator&&!p.isDeceased?`<button class="btn-p text-xs w-full" onclick="toast('Calling ${p.phone}...','info')"><i class="fa-solid fa-phone mr-2"></i>Call Owner</button>`:''}
         ${p.phone&&!p.isLitigator&&!p.isDeceased?`<button class="btn-s text-xs w-full" onclick="toast('SMS drafted','info')"><i class="fa-solid fa-comment mr-2"></i>Send SMS</button>`:''}
@@ -1949,6 +1963,8 @@ function renderDashboard(){
         <div class="grid grid-cols-2 gap-2">
           <button class="btn-s text-xs" onclick="switchView('map')"><i class="fa-solid fa-map mr-2" style="color:var(--accent)"></i>Open Map</button>
           <button class="btn-s text-xs" onclick="exportCSV()"><i class="fa-solid fa-file-export mr-2" style="color:var(--gold)"></i>Export CSV</button>
+          <button class="btn-s text-xs" onclick="exportCampaign()"><i class="fa-solid fa-phone-volume mr-2" style="color:var(--success)"></i>Campaign list</button>
+          <button class="btn-s text-xs" onclick="exportKML()"><i class="fa-solid fa-earth-americas mr-2" style="color:var(--accent)"></i>Export KML</button>
           <button class="btn-s text-xs" onclick="S.filters.quick='elite';updateFilterUI();switchView('map');toast('Showing elite leads','info')"><i class="fa-solid fa-star mr-2" style="color:var(--danger)"></i>Elite Leads</button>
           <button class="btn-s text-xs" onclick="S.filters.quick='hasphone';updateFilterUI();switchView('map');toast('Showing leads with phones','info')"><i class="fa-solid fa-phone mr-2" style="color:var(--accent)"></i>Has Phone</button>
           <button class="btn-s text-xs" onclick="S.filters.quick='strict';updateFilterUI();switchView('map');toast('Showing buyer-criteria fit','info')"><i class="fa-solid fa-circle-check mr-2" style="color:var(--success)"></i>Buyer Fit</button>
@@ -2062,9 +2078,9 @@ document.getElementById('front-min').addEventListener('input',e=>{
   refreshCurrentView();
 });
 
-['t-locked','t-phone','t-dnc','t-oos','t-absentee','t-mh','t-cluster'].forEach(id=>{
+['t-locked','t-phone','t-dnc','t-safe','t-portfolio','t-oos','t-absentee','t-mh','t-cluster'].forEach(id=>{
   document.getElementById(id).addEventListener('change',e=>{
-    const map={'t-locked':'hideLocked','t-phone':'phoneOnly','t-dnc':'hideDnc','t-oos':'oosOnly','t-absentee':'absenteeOnly','t-mh':'mhOnly','t-cluster':'cluster'};
+    const map={'t-locked':'hideLocked','t-phone':'phoneOnly','t-dnc':'hideDnc','t-safe':'callSafe','t-portfolio':'portfolioOnly','t-oos':'oosOnly','t-absentee':'absenteeOnly','t-mh':'mhOnly','t-cluster':'cluster'};
     S.filters[map[id]]=e.target.checked;
     refreshCurrentView();
   });
@@ -2121,7 +2137,7 @@ document.getElementById('drawer-toggle').addEventListener('click',()=>{
 document.getElementById('drawer-search').addEventListener('input',()=>renderMapDrawer());
 
 document.getElementById('reset-btn').addEventListener('click',()=>{
-  S.filters={search:'',quick:null,view:'all',counties:[],ownerTypes:[],scoreMin:0,valMax:200000,frontMin:0,flood:null,hideLocked:false,phoneOnly:false,hideDnc:false,oosOnly:false,absenteeOnly:false,mhOnly:false,cluster:true};
+  S.filters={search:'',quick:null,view:'all',counties:[],ownerTypes:[],scoreMin:0,valMax:200000,frontMin:0,flood:null,hideLocked:false,phoneOnly:false,hideDnc:false,callSafe:false,portfolioOnly:false,oosOnly:false,absenteeOnly:false,mhOnly:false,cluster:true};
   document.getElementById('score-min').value=0;document.getElementById('score-val').textContent='0';
   document.getElementById('val-max').value=200000;document.getElementById('val-val').textContent='No limit';
   document.getElementById('front-min').value=0;document.getElementById('front-val').textContent='0 ft';
@@ -2151,6 +2167,36 @@ function exportCSV(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='urthmapper-leads-'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();toast(`Exported ${filtered.length} leads`,'success');
+}
+
+// Campaign-ready: only leads that are safe + legal to call, best contact first.
+function exportCampaign(){
+  const callable=sortLeads(applyFilters()).filter(p=>p.phone&&!p.isDNC&&!p.isLitigator&&!p.isDeceased);
+  if(!callable.length){toast('No callable leads in current filter','warn');return;}
+  const headers=['Score','Owner','Phone','Email','PhoneType','County','Address','City','State','Acreage','LandValue','ParcelID','Status'];
+  const rows=callable.map(p=>[p.score,p.owner,p.phone,p.email||'',p.phoneType||'',p.county,p.address,p.city,p.state,p.acreage,p.landValue,p.parcelId,p.status]);
+  const csv=headers.join(',')+'\n'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='urthmapper-campaign-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();toast(`Exported ${callable.length} callable leads`,'success');
+}
+
+// KML for Google Earth / sharing — placemarks colored by lead score.
+function exportKML(){
+  const pts=sortLeads(applyFilters()).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+  if(!pts.length){toast('No mappable leads in current filter','warn');return;}
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const styles=[['hot','ff5c5cf2'],['warm','4f95e8'],['mid','2762c9'],['cold','b6822e']]
+    .map(([id,abgr])=>`<Style id="${id}"><IconStyle><color>${abgr}</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle></Style>`).join('');
+  const place=p=>{
+    const sid=p.score>=85?'hot':p.score>=70?'warm':p.score>=50?'mid':'cold';
+    const desc=`Score: ${p.score}\nOwner: ${esc(p.owner)}\nPhone: ${esc(p.phone||'—')}${p.isDNC?' (DNC)':''}\nEmail: ${esc(p.email||'—')}\nValue: $${(p.landValue||0).toLocaleString()}\nParcel: ${esc(p.parcelId)}`;
+    return `<Placemark><name>${esc(p.owner||p.parcelId)}</name><styleUrl>#${sid}</styleUrl><description>${desc}</description><Point><coordinates>${p.lng},${p.lat},0</coordinates></Point></Placemark>`;
+  };
+  const kml=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>UrthMapper Leads</name>${styles}${pts.map(place).join('')}</Document></kml>`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([kml],{type:'application/vnd.google-earth.kml+xml'}));
+  a.download='urthmapper-leads-'+new Date().toISOString().slice(0,10)+'.kml';
+  a.click();toast(`Exported ${pts.length} leads to KML`,'success');
 }
 document.getElementById('export-btn').addEventListener('click',exportCSV);
 
