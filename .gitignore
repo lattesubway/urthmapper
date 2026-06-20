@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+*.log
+.env
+.env.*
+
+# Grok/Cursor MCP push temp files
+.mcp_*
+.exact_*
+._*
+.tmp_push_*
+.push_args_*
+.push_invoke_*
+_callmcp_*
+_call_*
+_invoke_*
+_mcp_*

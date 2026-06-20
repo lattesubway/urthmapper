@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0d14">
+<title>Urthmapper — Land Lead Console</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{heading:['Syne','sans-serif'],body:['DM Sans','sans-serif'],mono:['IBM Plex Mono','monospace']}}}}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="leads-data.js"></script>
+<style>
+:root{
+  --bg:#0b0d14;--bg-card:rgba(17,19,30,.88);--bg-el:#1c1f2e;--bg-hover:#262a3d;
+  --fg:#ede8df;--fg2:#9d99ad;--muted:#646078;
+  --accent:#d96847;--accent-dim:rgba(217,104,71,.14);--accent-glow:rgba(217,104,71,.38);
+  --gold:#c9a227;--gold-dim:rgba(201,162,39,.14);--gold2:#9e4b2f;
+  --danger:#f25f5c;--danger-dim:rgba(242,95,92,.14);
+  --success:#5da87a;--success-dim:rgba(93,168,122,.14);
+  --warm:#e8954f;--warm-dim:rgba(232,149,79,.14);
+  --info:#6eb5d4;--info-dim:rgba(110,181,212,.14);
+  --parcel:#2ec4b6;--parcel-dim:rgba(46,196,182,.14);--parcel-glow:rgba(46,196,182,.72);
+  --border:rgba(42,40,58,.92);--border-lt:rgba(62,58,82,.95);
+  --surface-overlay:rgba(14,16,26,.9);--shadow-glow:rgba(217,104,71,.22);
+  --glass:blur(14px) saturate(1.15);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:'DM Sans',sans-serif;overflow:hidden}
+</style>
+</head>
+<body>
+<div id="app"></div>
+</body>
+</html>
