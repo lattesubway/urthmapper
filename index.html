@@ -230,6 +230,46 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
   .lead-panel{display:none!important}
   .map-drawer{width:calc(100% - 24px);right:12px}
 }
+
+/* ===== Cinematic HUD elevation ===== */
+#view-map{isolation:isolate}
+#view-map::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:900;
+  box-shadow:inset 0 0 180px 40px rgba(0,0,0,.55),inset 0 0 60px rgba(0,0,0,.35)}
+#filter-sidebar,#map-lead-drawer,#detail-panel{
+  background:linear-gradient(180deg,rgba(20,24,16,.80),rgba(9,11,7,.86))!important;
+  box-shadow:0 28px 70px -24px rgba(0,0,0,.78),inset 0 1px 0 rgba(255,255,255,.04)}
+#map-lead-drawer{border:1px solid var(--border-lt);border-radius:16px;overflow:hidden}
+#score-legend{box-shadow:0 18px 44px -18px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04)}
+
+/* ===== Natural-language Deal Finder ===== */
+.nl-finder{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1200;
+  width:min(700px,calc(100% - 360px));pointer-events:none}
+.nl-bar{pointer-events:auto;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(23,27,16,.88),rgba(10,12,8,.92));
+  border:1px solid var(--border-lt);backdrop-filter:blur(20px) saturate(1.25);-webkit-backdrop-filter:blur(20px) saturate(1.25);
+  box-shadow:0 24px 64px -18px rgba(0,0,0,.82),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:box-shadow .3s,border-color .3s,transform .3s}
+.nl-bar:focus-within{border-color:var(--accent);
+  box-shadow:0 26px 80px -16px rgba(0,0,0,.86),0 0 0 1px var(--accent-dim),0 0 42px -8px var(--accent-glow)}
+.nl-spark{color:var(--accent);font-size:14px;filter:drop-shadow(0 0 8px var(--accent-glow));animation:nlPulse 3.2s ease-in-out infinite}
+@keyframes nlPulse{0%,100%{opacity:.82}50%{opacity:1;filter:drop-shadow(0 0 13px var(--accent-glow))}}
+#nl-input{flex:1;min-width:0;background:transparent;border:none;outline:none;color:var(--fg);font-family:inherit;font-size:13.5px}
+#nl-input::placeholder{color:var(--muted)}
+.nl-go{background:var(--accent);color:#0a0c06;font-weight:700;border:none;border-radius:10px;padding:7px 14px;font-size:12.5px;
+  cursor:pointer;font-family:inherit;white-space:nowrap;transition:transform .12s,box-shadow .2s}
+.nl-go:hover{transform:translateY(-1px);box-shadow:0 8px 22px -6px var(--accent-glow)}
+.nl-clear{background:transparent;border:none;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;padding:0 4px;transition:color .15s}
+.nl-clear:hover{color:var(--fg)}
+.nl-chips{pointer-events:auto;display:none;flex-wrap:wrap;gap:6px;margin-top:8px;padding:0 4px}
+.nl-chips.on{display:flex;animation:nlIn .25s ease}
+.nl-chips-label{font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);align-self:center;margin-right:2px}
+.nl-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 9px;border-radius:99px;
+  background:var(--accent-dim);color:var(--accent3);border:1px solid rgba(168,216,16,.25);animation:nlIn .3s ease backwards}
+.nl-chip i{font-size:9px;opacity:.9}
+.nl-readout{pointer-events:auto;margin-top:8px;padding:0 4px;font-size:12px;color:var(--fg2);text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.nl-reason{display:inline-block;font-size:11px;padding:2px 7px;border-radius:6px;background:rgba(168,216,16,.10);color:var(--accent3);margin:1px 2px}
+@keyframes nlIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (max-width:900px){.nl-finder{width:calc(100% - 24px);left:12px;transform:none}.nl-go span{display:none}}
 </style>
 </head>
 <body>
@@ -399,6 +439,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 
 <div id="view-map" class="view-panel flex-1 relative">
   <div id="map" class="w-full h-full"></div>
+  <div id="nl-finder" class="nl-finder">
+    <div class="nl-bar">
+      <i class="fa-solid fa-wand-magic-sparkles nl-spark" title="Natural-language Deal Finder"></i>
+      <input id="nl-input" type="text" autocomplete="off" spellcheck="false"
+        placeholder="Describe your ideal lead — “absentee, 1–5 acres, low flood, high equity, has phone”">
+      <button id="nl-go" class="nl-go" title="Find matching leads">Find<span> deals</span> <i class="fa-solid fa-arrow-right ml-1"></i></button>
+      <button id="nl-clear" class="nl-clear" title="Clear">×</button>
+    </div>
+    <div id="nl-chips" class="nl-chips"></div>
+    <div id="nl-readout" class="nl-readout"></div>
+  </div>
   <div class="absolute top-3 left-3 z-[1000] flex items-center gap-2 rounded-lg border border-[var(--border)] p-2 text-[10px]" style="background:var(--surface-overlay)">
     <button id="map-mode-2d" class="mode-btn active" type="button">2D</button>
     <button id="map-mode-3d" class="mode-btn" type="button">3D</button>
@@ -632,6 +683,7 @@ const S={
   filters:{
     search:'',quick:null,view:'all',counties:[],ownerTypes:[],
     scoreMin:0,valMax:200000,frontMin:0,flood:null,
+    acreageMin:0,acreageMax:0,equityMin:0,
     hideLocked:false,phoneOnly:false,hideDnc:false,callSafe:false,portfolioOnly:false,
     oosOnly:false,absenteeOnly:false,mhOnly:false,cluster:true
   },
@@ -670,7 +722,9 @@ function applyFilters(){
   return prospects.filter(p=>{
     if(f.search){
       const q=f.search.toLowerCase();
-      if(!p.owner.toLowerCase().includes(q)&&!p.parcelId.toLowerCase().includes(q)&&!p.address.toLowerCase().includes(q)) return false;
+      if(!p.owner.toLowerCase().includes(q)&&!p.parcelId.toLowerCase().includes(q)&&!p.address.toLowerCase().includes(q)
+         &&!(p.city||'').toLowerCase().includes(q)&&!(p.county||'').toLowerCase().includes(q)
+         &&!(p.mailingAddress||'').toLowerCase().includes(q)) return false;
     }
     if(f.quick==='elite'&&p.score<70) return false;
     if(f.quick==='hasphone'&&!p.phone) return false;
@@ -686,6 +740,9 @@ function applyFilters(){
     if(p.score<f.scoreMin) return false;
     if(p.landValue>f.valMax&&f.valMax<200000) return false;
     if(p.frontage<f.frontMin) return false;
+    if(f.acreageMin&&!(p.acreage>=f.acreageMin)) return false;
+    if(f.acreageMax&&!(p.acreage<=f.acreageMax)) return false;
+    if(f.equityMin&&!(p.equityVsSalePct!=null&&p.equityVsSalePct>=f.equityMin)) return false;
     if(f.flood&&p.floodZone!==f.flood&&!(f.flood==='none'&&(p.floodZone==='None'||p.floodZone==='X'))) return false;
     if(f.hideLocked&&p.isLocked) return false;
     if(f.phoneOnly&&!p.phone) return false;
@@ -698,6 +755,123 @@ function applyFilters(){
     return true;
   });
 }
+
+/* ===== Natural-language Deal Finder =====================================
+   Parses a plain-English description of an ideal lead into the structured
+   filter state, reports the criteria it understood, and surfaces WHY the top
+   match ranks. Runs fully on-device — no API, instant, private. */
+function nlEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+const NL_DIMS={counties:[],ownerTypes:[],oosOnly:false,absenteeOnly:false,portfolioOnly:false,
+  phoneOnly:false,callSafe:false,mhOnly:false,flood:null,scoreMin:0,valMax:200000,
+  frontMin:0,acreageMin:0,acreageMax:0,equityMin:0,search:'',quick:null};
+
+function parseNLQuery(text){
+  const t=(' '+String(text||'').toLowerCase()+' ').replace(/[,]/g,' ');
+  const patch={}; const criteria=[]; const add=(label,icon)=>criteria.push({label,icon});
+  const money=s=>{s=String(s).replace(/[$,\s]/g,'');let m=s.match(/^([\d.]+)k$/);if(m)return Math.round(+m[1]*1e3);m=s.match(/^([\d.]+)m$/);if(m)return Math.round(+m[1]*1e6);return Math.round(+s);};
+  let m;
+  // Acreage range / bounds
+  if((m=t.match(/(\d+(?:\.\d+)?)\s*(?:to|-|–|and)\s*(\d+(?:\.\d+)?)\s*(?:ac\b|acres?\b)/))){patch.acreageMin=+m[1];patch.acreageMax=+m[2];add(`${+m[1]}–${+m[2]} ac`,'fa-ruler-combined');}
+  else{
+    if((m=t.match(/(?:under|below|less than|up to|max(?:imum)?|<)\s*(\d+(?:\.\d+)?)\s*(?:ac\b|acres?\b)/))){patch.acreageMax=+m[1];add(`≤ ${+m[1]} ac`,'fa-ruler-combined');}
+    if((m=t.match(/(?:over|above|at least|min(?:imum)?|>)\s*(\d+(?:\.\d+)?)\s*(?:ac\b|acres?\b)/))||(m=t.match(/(\d+(?:\.\d+)?)\s*\+\s*(?:ac\b|acres?\b)/))){patch.acreageMin=+m[1];add(`≥ ${+m[1]} ac`,'fa-ruler-combined');}
+  }
+  // Value ceiling
+  if((m=t.match(/(?:under|below|less than|up to|max(?:imum)?|<)\s*\$\s*([\d.,]+\s*[km]?)/))||(m=t.match(/\$\s*([\d.,]+\s*[km]?)\s*(?:or less|max|budget)/))){const v=money(m[1]);if(v>=500&&v<=2000000){patch.valMax=v;add(`≤ $${v.toLocaleString()}`,'fa-tag');}}
+  if(/\bcheap(est)?\b|low[- ]?cost|bargain/.test(t)&&patch.valMax==null){patch.valMax=25000;add('≤ $25,000','fa-tag');}
+  // Owner motivation
+  if(/out[- ]?of[- ]?state|\boos\b/.test(t)){patch.oosOnly=true;add('Out-of-state owner','fa-plane-departure');}
+  else if(/\babsentee\b/.test(t)){patch.absenteeOnly=true;add('Absentee owner','fa-house-circle-xmark');}
+  const types=[];
+  if(/\bindividual(s)?\b|personal owner|private owner/.test(t))types.push('Individual');
+  if(/\bllc\b/.test(t))types.push('LLC');
+  if(/\btrust(s)?\b/.test(t))types.push('Trust');
+  if(/\bestate(s)?\b/.test(t))types.push('Estate');
+  if(/\bcorp(orate|oration)?\b/.test(t))types.push('Corporate');
+  if(/\bheirs?\b/.test(t))types.push('Heirs');
+  if(types.length){patch.ownerTypes=types;add(types.join('/')+' owner','fa-user');}
+  if(/portfolio|multi[- ]?parcel|bulk owner|multiple parcels/.test(t)){patch.portfolioOnly=true;add('Portfolio owner','fa-layer-group');}
+  // Flood / wetlands
+  if(/(low|no|avoid|out of|minimal|without|exclude)[\sa-z]{0,14}(flood|wetland)|\bdry\b|high(er)? ground/.test(t)){patch.flood='none';add('Low flood / no wetlands','fa-water');}
+  // Contact
+  if(/has phone|with phone|phone number|reachable|skip[- ]?trace|with contact/.test(t)){patch.phoneOnly=true;add('Has phone','fa-phone');}
+  if(/no dnc|exclude dnc|call[- ]?safe|not on dnc|do not call/.test(t)){patch.callSafe=true;add('Call-safe','fa-shield-halved');}
+  // Equity
+  if((m=t.match(/equity\s*(?:over|above|>|of|at least)?\s*(\d{1,3})\s*%/))){patch.equityMin=+m[1];add(`≥ ${+m[1]}% equity`,'fa-sack-dollar');}
+  else if(/high equity|strong equity|lots of equity|good equity|much equity/.test(t)){patch.equityMin=50;add('High equity','fa-sack-dollar');}
+  // Road / frontage
+  if((m=t.match(/(\d{2,3})\s*(?:ft|foot|feet)\s*(?:of\s*)?(?:road\s*)?frontage/))){patch.frontMin=+m[1];add(`≥ ${+m[1]} ft frontage`,'fa-road');}
+  else if(/road access|good frontage|road frontage|paved road|street access/.test(t)){patch.frontMin=Math.max(patch.frontMin||0,50);add('Road access','fa-road');}
+  // Mobile home
+  if(/mobile home|\bmh\b|manufactured home/.test(t)){patch.mhOnly=true;add('MH-allowed','fa-house');}
+  // Quality / score
+  if((m=t.match(/score\s*(?:over|above|>|of|at least|min(?:imum)?)?\s*(\d{1,3})/))){patch.scoreMin=Math.min(100,+m[1]);add(`Score ≥ ${+m[1]}`,'fa-star');}
+  else if(/\bbest\b|\btop\b|\belite\b|highest|hottest|high[- ]?quality|most motivated|most likely/.test(t)){patch.scoreMin=Math.max(patch.scoreMin||0,70);add('Elite (70+)','fa-star');}
+  // Location — match counties / cities actually present in the data
+  const counties=[...new Set(prospects.map(p=>p.county).filter(Boolean))];
+  const cty=counties.find(c=>t.includes(' '+c.toLowerCase()+' '));
+  if(cty){patch.counties=[cty];add(cty+' County','fa-location-dot');}
+  if(!cty){
+    const cities=[...new Set(prospects.map(p=>(p.city||'').toLowerCase().trim()).filter(c=>c.length>3))];
+    const city=cities.find(c=>t.includes(' '+c+' '));
+    if(city){patch.search=city;add(city.replace(/\b\w/g,ch=>ch.toUpperCase()),'fa-map-pin');}
+  }
+  const zip=t.match(/\b(3\d{4})\b/); if(zip){patch.search=zip[1];add('ZIP '+zip[1],'fa-map-pin');}
+  return {patch,criteria};
+}
+
+// Top positive ranking factors for a lead, from its real score breakdown.
+function topReasons(p,n=3){
+  return (p.scoreBreakdown||[])
+    .filter(s=>!s.includes('(-'))
+    .map(s=>s.replace(/\s*\([+\-]?\d+\)\s*$/,'').replace(/:.*$/,'').trim())
+    .filter(Boolean).slice(0,n)
+    .map(s=>`<span class="nl-reason">${nlEsc(s)}</span>`);
+}
+
+function renderNLChips(criteria){
+  const row=document.getElementById('nl-chips'); if(!row) return;
+  if(!criteria||!criteria.length){row.className='nl-chips';row.innerHTML='';return;}
+  row.className='nl-chips on';
+  row.innerHTML='<span class="nl-chips-label">Understood</span>'+
+    criteria.map((c,i)=>`<span class="nl-chip" style="animation-delay:${i*40}ms"><i class="fa-solid ${c.icon}"></i>${nlEsc(c.label)}</span>`).join('');
+}
+
+function runNLSearch(){
+  const input=document.getElementById('nl-input'); if(!input) return;
+  const text=input.value.trim();
+  if(!text){clearNLSearch();return;}
+  const {patch,criteria}=parseNLQuery(text);
+  Object.assign(S.filters,JSON.parse(JSON.stringify(NL_DIMS)),patch);
+  if(S.view!=='map') switchView('map');
+  updateFilterUI(); refreshCurrentView(); renderNLChips(criteria);
+  const matches=applyFilters().slice().sort((a,b)=>b.score-a.score);
+  const read=document.getElementById('nl-readout');
+  if(read){
+    if(!criteria.length){read.innerHTML='<span style="color:var(--warm)">Couldn\'t read any criteria — try “absentee, 1–5 ac, low flood, has phone”.</span>';}
+    else if(!matches.length){read.innerHTML=`<span style="color:var(--warm)"><i class="fa-solid fa-circle-exclamation mr-1"></i>No leads match all ${criteria.length} criteria — loosen the description.</span>`;}
+    else{const top=matches[0];const reasons=topReasons(top,3);
+      read.innerHTML=`<strong style="color:var(--accent)">${matches.length}</strong> match${matches.length===1?'':'es'} · top: <strong>${nlEsc(top.owner.length>24?top.owner.slice(0,24)+'…':top.owner)}</strong> <span style="color:var(--muted)">— ranked for</span> ${reasons.join('')||'score '+top.score}`;}
+  }
+  const top=matches[0];
+  if(top&&Number.isFinite(top.lat)&&Number.isFinite(top.lng)) selectLead(top);
+}
+
+function clearNLSearch(){
+  const input=document.getElementById('nl-input'); if(input) input.value='';
+  renderNLChips([]);
+  const read=document.getElementById('nl-readout'); if(read) read.innerHTML='';
+  Object.assign(S.filters,JSON.parse(JSON.stringify(NL_DIMS)));
+  updateFilterUI(); refreshCurrentView();
+}
+
+(function wireDealFinder(){
+  const input=document.getElementById('nl-input');
+  if(input) input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runNLSearch();}else if(e.key==='Escape'){clearNLSearch();input.blur();}});
+  const go=document.getElementById('nl-go'); if(go) go.addEventListener('click',runNLSearch);
+  const clr=document.getElementById('nl-clear'); if(clr) clr.addEventListener('click',clearNLSearch);
+})();
 
 function countActiveFilters(){
   const f=S.filters;let n=0;
