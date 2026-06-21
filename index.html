@@ -822,12 +822,14 @@ function parseNLQuery(text){
 }
 
 // Top positive ranking factors for a lead, from its real score breakdown.
-function topReasons(p,n=3){
+function reasonList(p){
   return (p.scoreBreakdown||[])
     .filter(s=>!s.includes('(-'))
     .map(s=>s.replace(/\s*\([+\-]?\d+\)\s*$/,'').replace(/:.*$/,'').trim())
-    .filter(Boolean).slice(0,n)
-    .map(s=>`<span class="nl-reason">${nlEsc(s)}</span>`);
+    .filter(Boolean);
+}
+function topReasons(p,n=3){
+  return reasonList(p).slice(0,n).map(s=>`<span class="nl-reason">${nlEsc(s)}</span>`);
 }
 
 function renderNLChips(criteria){
@@ -868,7 +870,18 @@ function clearNLSearch(){
 
 (function wireDealFinder(){
   const input=document.getElementById('nl-input');
-  if(input) input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runNLSearch();}else if(e.key==='Escape'){clearNLSearch();input.blur();}});
+  if(input){
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runNLSearch();}else if(e.key==='Escape'){clearNLSearch();input.blur();}});
+    // Live as-you-type: preview the criteria chips without applying (Enter applies).
+    let previewT;
+    input.addEventListener('input',()=>{
+      clearTimeout(previewT);
+      previewT=setTimeout(()=>{
+        const v=input.value.trim();
+        renderNLChips(v?parseNLQuery(v).criteria:[]);
+      },160);
+    });
+  }
   const go=document.getElementById('nl-go'); if(go) go.addEventListener('click',runNLSearch);
   const clr=document.getElementById('nl-clear'); if(clr) clr.addEventListener('click',clearNLSearch);
 })();
@@ -975,6 +988,7 @@ function renderMapDrawer(){
         <div class="min-w-0 flex-1">
           <div class="font-medium text-xs truncate" style="color:var(--fg)">${p.owner}</div>
           <div class="text-[10px] truncate" style="color:var(--muted)">${p.parcelId} · ${p.county} · ${p.acreage}ac</div>
+          ${reasonList(p)[0]?`<div class="text-[9px] truncate mt-0.5" style="color:var(--accent3)"><i class="fa-solid fa-bolt mr-0.5" style="font-size:8px"></i>${nlEsc(reasonList(p)[0])}</div>`:''}
         </div>
         <span class="font-mono text-xs font-bold shrink-0" style="color:${sc}">${p.score}</span>
       </div>
