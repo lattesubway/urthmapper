@@ -3,7 +3,8 @@ const TARGET_CITIES = {
   Hillsborough: ['TAMPA', 'TEMPLE TERRACE', 'BRANDON', 'RIVERVIEW', 'TOWN N COUNTRY'],
   Pasco: ['NEW PORT RICHEY', 'PORT RICHEY', 'HOLIDAY', 'HUDSON', 'LAND O LAKES', 'WESLEY CHAPEL'],
   Manatee: ['BRADENTON', 'PALMETTO', 'ELLENTON', 'PARRISH'],
-  Sarasota: ['SARASOTA', 'VENICE', 'NORTH PORT', 'OSPREY', 'NOKOMIS']
+  Sarasota: ['SARASOTA', 'VENICE', 'NORTH PORT', 'OSPREY', 'NOKOMIS'],
+  Flagler: ['PALM COAST', 'BUNNELL', 'FLAGLER BEACH']
 };
 
 const VACANT_DOR_PREFIXES = ['00', '10', '19'];
@@ -332,6 +333,80 @@ const COUNTY_SOURCES = {
     postFilter(parcel) {
       const city = (parcel.situsAddress.city || '').toUpperCase();
       return !city || TARGET_CITIES.Sarasota.includes(city);
+    }
+  },
+
+  // ── Flagler County — ZIP 32137 / Palm Coast (East Florida) ──────────────
+  // SCAFFOLD: structure mirrors the other counties and the normalized output
+  // is correct, but the queryUrl and SOURCE attribute names below COULD NOT BE
+  // VERIFIED against the live Flagler County Property Appraiser ArcGIS service
+  // (outbound network was blocked when this was wired in). Before the first
+  // scrape, confirm against the service catalog and fix the marked lines:
+  //   1) queryUrl -> the real Parcels FeatureServer/MapServer layer query URL
+  //   2) the a.* field names in buildWhere()/parseFeature() to match the layer
+  // Discover them with:
+  //   curl '<server>/arcgis/rest/services?f=json'
+  //   curl '<.../Parcels/FeatureServer/0?f=json'   # lists field names
+  Flagler: {
+    name: 'Flagler',
+    // TODO[VERIFY]: replace with the confirmed Flagler PA parcels layer query URL.
+    queryUrl: 'https://gis.flaglercounty.gov/server/rest/services/Parcels/MapServer/0/query',
+    // Defaults to ZIP 32137 (the client's target); pass { zip } to override.
+    buildWhere({ zip = '32137', cities, minLandValue, maxLandValue, minAcres, maxAcres }) {
+      const clauses = [];
+      // TODO[VERIFY]: SITE_ZIP / SITE_CITY field names against the live layer.
+      if (zip) clauses.push(`SITE_ZIP LIKE '${String(zip).replace(/'/g, "''")}%'`);
+      else clauses.push(sqlIn('SITE_CITY', cities || TARGET_CITIES.Flagler));
+      clauses.push('IMP_VALUE = 0');                 // vacant land only
+      clauses.push(`LAND_VALUE >= ${minLandValue}`);
+      clauses.push(`LAND_VALUE <= ${maxLandValue}`);
+      clauses.push(`Acres >= ${minAcres}`);
+      clauses.push(`Acres <= ${maxAcres}`);
+      return clauses.join(' AND ');
+    },
+    parseFeature(feature) {
+      const a = feature.attributes || {};
+      // TODO[VERIFY]: map these to the live Flagler layer's actual field names.
+      const owner = [a.OWNER1 || a.OWNER_NAME, a.OWNER2].filter(Boolean).join(' ').trim();
+      const situsStreet = buildSitusStreet(a.SITE_NUM, a.SITE_ADDRESS || a.SITUS_ADDR);
+      return {
+        county: 'Flagler',
+        parcelId: a.PARCELID || a.PARCEL_ID || a.ALTKEY || a.STRAP,
+        owner,
+        ownerType: classifyOwnerType(owner),
+        situsAddress: {
+          street: situsStreet,
+          city: a.SITE_CITY || a.SITUS_CITY || '',
+          state: a.SITE_STATE || 'FL',
+          zip: a.SITE_ZIP || a.SITUS_ZIP || '',
+          full: [situsStreet, a.SITE_CITY || a.SITUS_CITY, 'FL', a.SITE_ZIP || a.SITUS_ZIP].filter(Boolean).join(', ')
+        },
+        mailingAddress: buildMailing({
+          line1: a.OWNADD_1 || a.MAIL_ADDR1,
+          line2: a.OWNADD_2 || a.MAIL_ADDR2,
+          city: a.OWNCITY || a.MAIL_CITY,
+          state: a.OWNSTATE || a.MAIL_STATE,
+          zip: a.OWNZIP || a.MAIL_ZIP,
+          country: a.OWNCOUNTRY
+        }),
+        acreage: Number(a.Acres || a.ACREAGE || a.GIS_ACRES) || 0,
+        landValue: Number(a.LAND_VALUE || a.LANDVAL) || 0,
+        improvementValue: Number(a.IMP_VALUE || a.BLDGVAL) || 0,
+        marketValue: Number(a.TAXABLE_VALUE || a.JUST_VALUE || a.LAND_VALUE) || 0,
+        zoning: a.USE_CODE || a.DOR_CODE || a.LAND_USE_CODE || 'Unknown',
+        dorCode: a.USE_CODE || a.DOR_CODE || '',
+        landUseDescription: a.LEGAL || a.LEGAL_DESC || '',
+        frontage: 0,
+        saleDate: a.SALEDATE1 || a.SALE_DATE || null,
+        salePrice: Number(a.SALEPRICE1 || a.SALE_PRICE) || null,
+        geometry: feature.geometry,
+        sourceLayer: 'flagler-parcels-UNVERIFIED'
+      };
+    },
+    cityFilter(parcel) {
+      // ZIP-scoped scrape already targets 32137; keep Palm Coast / Flagler cities.
+      const city = (parcel.situsAddress.city || '').toUpperCase();
+      return !city || TARGET_CITIES.Flagler.includes(city);
     }
   }
 };

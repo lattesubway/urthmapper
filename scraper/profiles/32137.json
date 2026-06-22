@@ -1,0 +1,26 @@
+{
+  "name": "Palm Coast / Flagler County — ZIP 32137",
+  "county": "Flagler",
+  "zip": "32137",
+  "notes": "Client criteria for the East Florida demo. Used to seed scrape + post-scrape lead filtering. Tune as criteria firm up.",
+  "scrape": {
+    "minAcres": 0.25,
+    "maxAcres": 5,
+    "minLandValue": 1000,
+    "maxLandValue": 1000000,
+    "vacantOnly": true
+  },
+  "leadFilters": {
+    "minAcreage": 0.25,
+    "maxAcreage": 5,
+    "residentialOnly": true,
+    "comment_residential": "Keep DOR/use codes for residential + rural/agricultural-residential; drop commercial/industrial.",
+    "noHighFlood": true,
+    "excludeWetlands": true,
+    "requireRoadAccess": true,
+    "preferAbsenteeOrOOS": true,
+    "comment_owners": "Absentee / out-of-state preferred but local owners allowed — preference, not a hard filter.",
+    "minEquityPct": null,
+    "comment_equity": "Left null until the client picks a realistic threshold for the area."
+  }
+}
