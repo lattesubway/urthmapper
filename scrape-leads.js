@@ -46,7 +46,8 @@ function parseArgs(argv) {
     allOwners: true,
     geojson: false,
     csv: false,
-    summary: false
+    summary: false,
+    profile: null
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -59,6 +60,14 @@ function parseArgs(argv) {
       options.output = argv[++i];
     } else if (arg === '--min-score' && argv[i + 1]) {
       options.minScore = Number(argv[++i]);
+    } else if (arg === '--profile' && argv[i + 1]) {
+      const pf = argv[++i];
+      try {
+        options.profile = JSON.parse(fs.readFileSync(pf, 'utf8'));
+      } catch (e) {
+        throw new Error(`Could not load profile ${pf}: ${e.message}`);
+      }
+      if (options.profile.county) options.counties = [String(options.profile.county).toLowerCase()];
     } else if (arg === '--export-app') {
       options.exportApp = true;
     } else if (arg === '--skiptrace') {
@@ -327,6 +336,15 @@ async function main() {
     minScore: options.minScore,
     requireMotivatedOwner: !options.allOwners
   };
+
+  if (options.profile?.scrape) {
+    const s = options.profile.scrape;
+    if (s.minAcres != null) filters.minAcres = s.minAcres;
+    if (s.maxAcres != null) filters.maxAcres = s.maxAcres;
+    if (s.minLandValue != null) filters.minLandValue = s.minLandValue;
+    if (s.maxLandValue != null) filters.maxLandValue = s.maxLandValue;
+    console.log(`📋 Profile: ${options.profile.name} — acreage ${filters.minAcres}-${filters.maxAcres}, county ${options.counties.join(',')}`);
+  }
 
   const skiptrace = options.skiptrace ? createSkiptraceProvider() : null;
   if (options.skiptrace && !skiptrace) {

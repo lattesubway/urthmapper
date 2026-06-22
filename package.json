@@ -6,6 +6,7 @@
   "scripts": {
     "scrape": "node scrape-leads.js",
     "scrape:export": "node scrape-leads.js --export-app",
+    "scrape:32137": "node scrape-leads.js --profile scraper/profiles/32137.json --export-app --skiptrace",
     "enrich:water": "node enrich-water.js --export-app",
     "enrich:investor": "node enrich-investor.js --export-app",
     "skiptrace": "node skiptrace-leads.js --export-app",
