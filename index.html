@@ -158,6 +158,10 @@ select.ipt{cursor:pointer}select.ipt option{background:var(--bg-card)}
 #pov-cesium.hidden{display:none}
 .pov-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(244,242,236,.85);font-size:11px;color:var(--muted);z-index:2}
 .pov-loading.off{display:none}
+.map-status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(10,12,6,.72);backdrop-filter:blur(2px);font-size:12px;color:var(--fg2);text-align:center;padding:24px;z-index:1200}
+.map-status.off{display:none}
+.map-status .spinner{width:26px;height:26px;border-radius:50%;border:3px solid rgba(168,216,16,.25);border-top-color:var(--accent,#a8d810);animation:map-spin .8s linear infinite}
+@keyframes map-spin{to{transform:rotate(360deg)}}
 
 .modal-ov{position:fixed;inset:0;background:rgba(24,23,28,.34);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:8000;animation:fadeIn .2s ease}
 .modal-c{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:92%;animation:fadeUp .3s ease;max-height:85vh;overflow-y:auto}
@@ -399,6 +403,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 
 <div id="view-map" class="view-panel flex-1 relative">
   <div id="map" class="w-full h-full"></div>
+  <div id="map-loading" class="map-status off"><div class="spinner"></div><span id="map-loading-msg">Loading map…</span></div>
   <div class="absolute top-3 left-3 z-[1000] flex items-center gap-2 rounded-lg border border-[var(--border)] p-2 text-[10px]" style="background:var(--surface-overlay)">
     <button id="map-mode-2d" class="mode-btn active" type="button">2D</button>
     <button id="map-mode-3d" class="mode-btn" type="button">3D</button>
@@ -1026,6 +1031,21 @@ function setPovLoading(on){
   if(el) el.classList.toggle('off',!on);
 }
 
+// Full-view loading/error overlay for the map surface, mirroring the pov-loading pattern.
+function setMapLoading(on,msg){
+  const el=document.getElementById('map-loading');
+  if(!el) return;
+  if(msg){const m=document.getElementById('map-loading-msg');if(m) m.textContent=msg;}
+  el.classList.toggle('off',!on);
+}
+
+// Instrumentation hook for map failure paths. No-ops until a PostHog SDK is present,
+// so it also gives the map_render_failed denominator once analytics is wired up.
+function reportMapRenderFailed(reason,detail){
+  try{window.posthog&&window.posthog.capture&&window.posthog.capture('map_render_failed',Object.assign({reason,mode:S.mapMode},detail||{}));}catch(_){/* analytics is best-effort */}
+  console.warn('map_render_failed',reason,detail||'');
+}
+
 function hidePovPanel(){
   const panel=document.getElementById('pov-panel');
   if(panel) panel.classList.remove('visible');
@@ -1121,15 +1141,45 @@ function onLeadHoverEnd(lead){
   }
 }
 
+const CARTO_TILE_URL='https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const ESRI_SAT_URL='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+// 1x1 transparent PNG. Stops Leaflet from retrying a dead tile and keeps a failed
+// tile from leaving a raw black hole in the grid.
+const BLANK_TILE='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+// Watch a tile layer for a burst of failures. Past the threshold it reports once and
+// runs onExhausted (e.g. fall back to another basemap) so an outage never reads as a
+// silent black map. A successful load resets the burst so the layer can warn again later.
+function guardTiles(layer,name,onExhausted){
+  let fails=0,notified=false,timer=null;
+  layer.on('tileerror',()=>{
+    fails++;
+    clearTimeout(timer);
+    timer=setTimeout(()=>{fails=0;},4000);
+    if(fails>=6&&!notified){
+      notified=true;
+      reportMapRenderFailed('tile_error',{layer:name});
+      if(onExhausted) onExhausted();
+      else toast('Map tiles are not loading — check your connection','error');
+    }
+  });
+  layer.on('load',()=>{fails=0;notified=false;});
+  return layer;
+}
+
 function initMap(){
   map=L.map('map',{zoomControl:true,attributionControl:true}).setView([27.97,-82.76],10);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+  const base=L.tileLayer(CARTO_TILE_URL,{
     attribution:'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-    subdomains:'abcd',maxZoom:19
+    subdomains:'abcd',maxZoom:19,errorTileUrl:BLANK_TILE
   }).addTo(map);
+  guardTiles(base,'carto_base');
 
-  const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:18,className:'mono-tiles'});
-  L.control.layers({'Map':L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd'}),'Satellite':satellite},null,{position:'topright'}).addTo(map);
+  const satellite=L.tileLayer(ESRI_SAT_URL,{attribution:'Esri',maxZoom:18,className:'mono-tiles',errorTileUrl:BLANK_TILE});
+  guardTiles(satellite,'esri_satellite',()=>{
+    if(map.hasLayer(satellite)){map.removeLayer(satellite);map.addLayer(base);toast('Satellite tiles unavailable — switched to map view','warn');}
+  });
+  L.control.layers({'Map':base,'Satellite':satellite},null,{position:'topright'}).addTo(map);
 
   clusterGroup=L.markerClusterGroup({spiderfyOnMaxZoom:true,showCoverageOnHover:false,maxClusterRadius:40,iconCreateFunction:function(cluster){
     const n=cluster.getChildCount();
@@ -1164,8 +1214,9 @@ async function init3DViewer(){
     await new Promise((resolve,reject)=>{
       const script=document.createElement('script');
       script.src='https://unpkg.com/cesium@1.124/Build/Cesium/Cesium.js';
-      script.onload=resolve;
-      script.onerror=reject;
+      const to=setTimeout(()=>reject(new Error('Cesium load timed out')),15000);
+      script.onload=()=>{clearTimeout(to);resolve();};
+      script.onerror=()=>{clearTimeout(to);reject(new Error('Cesium failed to load'));};
       document.head.appendChild(script);
     });
   }
@@ -1175,7 +1226,9 @@ async function init3DViewer(){
     baseLayerPicker:false,geocoder:false,timeline:false,animation:false,homeButton:false,sceneModePicker:false,fullscreenButton:false,navigationHelpButton:false,selectionIndicator:false,infoBox:false,
     shouldAnimate:true
   });
-  cesiumViewer.imageryLayers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',maximumLevel:19,credit:new Cesium.Credit('Esri World Imagery')}));
+  const esriImagery=new Cesium.UrlTemplateImageryProvider({url:ESRI_SAT_URL,maximumLevel:19,credit:new Cesium.Credit('Esri World Imagery')});
+  esriImagery.errorEvent.addEventListener(err=>reportMapRenderFailed('cesium_imagery',{detail:String((err&&err.message)||err)}));
+  cesiumViewer.imageryLayers.addImageryProvider(esriImagery);
   cesiumViewer.scene.globe.enableLighting=true;
   // Photorealistic elevation via Cesium Ion (optional, free token at ion.cesium.com).
   // Add once, before the leads-data.js include, a small inline script that sets
@@ -1547,19 +1600,13 @@ function switchMapMode(mode){
   const mapEl=document.getElementById('map');
   const cesiumEl=document.getElementById('cesiumContainer');
   if(mode==='3D'){
-    if(!cesiumViewer) init3DViewer();
     mapEl.classList.add('hidden');
     mapEl.style.display='none';
     cesiumEl.classList.remove('hidden');
     cesiumEl.style.display='block';
-    if(cesiumViewer){
-      setTimeout(()=>{
-        cesiumViewer.resize&&cesiumViewer.resize();
-        cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(-82.76,27.97,130000),orientation:{heading:Cesium.Math.toRadians(30),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8});
-        preloadGeometriesFor3D();
-      },50);
-    }
+    enter3D();
   } else {
+    setMapLoading(false);
     hideParcelPopup();
     cesiumEl.classList.add('hidden');
     cesiumEl.style.display='none';
@@ -1568,6 +1615,41 @@ function switchMapMode(mode){
     map.invalidateSize();
   }
   if(heatState.on) setTimeout(renderHeatmap,80);   // re-paint heatmap into the active view
+}
+
+// Enter 3D behind the loading overlay. The Cesium bundle and its imagery load lazily,
+// so without this the container just shows black until they land. A failed load falls
+// back to 2D with a message instead of a dead black viewport.
+async function enter3D(){
+  const firstInit=!cesiumViewer;
+  if(firstInit) setMapLoading(true,'Loading 3D globe…');
+  try{
+    await init3DViewer();
+  }catch(err){
+    setMapLoading(false);
+    reportMapRenderFailed('cesium_load',{detail:String((err&&err.message)||err)});
+    toast('3D view failed to load — staying in 2D','error');
+    switchMapMode('2D');
+    return;
+  }
+  if(!cesiumViewer){setMapLoading(false);return;}
+  cesiumViewer.resize&&cesiumViewer.resize();
+  if(!firstInit){
+    cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(-82.76,27.97,130000),orientation:{heading:Cesium.Math.toRadians(30),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8});
+  }
+  preloadGeometriesFor3D();
+  if(firstInit) hideMapLoadingWhenReady();
+  else setMapLoading(false);
+}
+
+// Keep the overlay up until the globe's first tiles paint, with a hard timeout so a
+// slow or offline tile service can never trap the map behind the spinner.
+function hideMapLoadingWhenReady(){
+  if(!cesiumViewer){setMapLoading(false);return;}
+  let done=false;
+  const finish=()=>{if(done) return;done=true;clearTimeout(to);remove&&remove();setMapLoading(false);};
+  const to=setTimeout(finish,8000);
+  const remove=cesiumViewer.scene.globe.tileLoadProgressEvent.addEventListener(pending=>{if(pending===0) finish();});
 }
 
 function scoreClass(p){
