@@ -1634,12 +1634,13 @@ async function enter3D(){
   }
   if(!cesiumViewer){setMapLoading(false);return;}
   cesiumViewer.resize&&cesiumViewer.resize();
-  if(!firstInit){
+  if(firstInit){
+    hideMapLoadingWhenReady();   // init3DViewer already set the camera and kicked off preload
+  }else{
     cesiumViewer.scene.camera.flyTo({destination:Cesium.Cartesian3.fromDegrees(-82.76,27.97,130000),orientation:{heading:Cesium.Math.toRadians(30),pitch:Cesium.Math.toRadians(-45),roll:0},duration:0.8});
+    preloadGeometriesFor3D();
+    setMapLoading(false);
   }
-  preloadGeometriesFor3D();
-  if(firstInit) hideMapLoadingWhenReady();
-  else setMapLoading(false);
 }
 
 // Keep the overlay up until the globe's first tiles paint, with a hard timeout so a
